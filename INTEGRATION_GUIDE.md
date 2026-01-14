@@ -50,7 +50,7 @@ from process_image_updated import process_image
 ```
 
 **Also Update Processing Logic (Lines 242-256):**
-
+ 
 **Current Code:**
 ```python
 processed_result = detect_and_count_rice_grains(image)

@@ -237,25 +237,23 @@ def process_image_route():
 
     # Import process_image lazily to avoid import errors at startup
     try:
-        from process_image import detect_and_count_rice_grains
-        processed_result = detect_and_count_rice_grains(image)
+        from process_image_updated import process_image
+        processed_result = process_image(image)
         
-        # Unpack results from the new function (7 values)
+        # Unpack results from process_image (10 values with ML classification)
         final_image = processed_result[0]
-        full_grain_count = processed_result[1]
-        broken_grain_count = processed_result[2]
-        chalky_count = processed_result[3]
-        black_count = processed_result[4]
-        yellow_count = processed_result[5]
+        perfect_count = processed_result[1]      # Full grain/perfect rice
+        chalky_count = processed_result[2]
+        black_count = processed_result[3]
+        yellow_count = processed_result[4]
+        brown_count = processed_result[5]
         broken_percentages = processed_result[6]
-
-        # Set default values for stone and husk since new version doesn't detect them
-        stone_count = 0
-        husk_count = 0
-        brown_count = 0  # Also not detected in new version
+        broken_grain_count = processed_result[7]
+        stone_count = processed_result[8]
+        husk_count = processed_result[9]
 
         # Calculate total count
-        total_objects = full_grain_count + chalky_count + black_count + yellow_count + brown_count + broken_grain_count + stone_count + husk_count
+        total_objects = perfect_count + chalky_count + black_count + yellow_count + brown_count + broken_grain_count + stone_count + husk_count
 
         # Save processed image with a timestamp-based filename
         processed_filename = f"processed_{int(time.time())}.jpg"
@@ -268,7 +266,7 @@ def process_image_route():
         return jsonify({
             "processed_image_url": url_for('static', filename=f'processed/{processed_filename}'),
             "total_objects": total_objects,
-            "full_grain_count": full_grain_count,
+            "perfect_count": perfect_count,
             "chalky_count": chalky_count,
             "black_count": black_count,
             "yellow_count": yellow_count,
@@ -279,7 +277,10 @@ def process_image_route():
             "husk_count": husk_count
         })
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        import traceback
+        print(f"Error processing image: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 
 @app.route('/process_dal', methods=['POST'])
