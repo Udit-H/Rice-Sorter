@@ -31,6 +31,46 @@ let dalResults = {
 // Track what was last analyzed
 let lastAnalyzed = null; // 'rice' or 'dal'
 
+function triggerUpload() {
+  document.getElementById('fileInput').click();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('fileInput').addEventListener('change', function(e) {
+    if (e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const overlay = document.getElementById('loadingOverlay');
+      overlay.style.display = 'flex';
+      
+      fetch("/upload", {
+        method: "POST",
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success && data.image_url) {
+          document.getElementById('displayImage').src = data.image_url;
+          document.getElementById('retakeButton').classList.remove('d-none');
+        } else {
+          alert("Upload failed: " + (data.error || "Unknown error"));
+        }
+      })
+      .catch(error => {
+        console.error("Error uploading file:", error);
+        alert("Error uploading file");
+      })
+      .finally(() => {
+        overlay.style.display = 'none';
+        // Reset input so same file can be selected again if needed
+        document.getElementById('fileInput').value = '';
+      });
+    }
+  });
+});
+
 function captureImage() {
   fetch("/capture", { method: "POST" })
     .then(response => response.json())

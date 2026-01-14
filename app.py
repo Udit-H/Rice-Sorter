@@ -237,30 +237,36 @@ def process_image_route():
 
     # Import process_image lazily to avoid import errors at startup
     try:
-        from process_image import detect_and_count_rice_grains
-        processed_result = detect_and_count_rice_grains(image)
+        print(f"Processing image at path: {image_full_path}")
+        from process_image_updated import process_image
+        print("Successfully imported process_image")
         
-        # Unpack results from the new function (7 values)
+        processed_result = process_image(image)
+        print("Image processing completed successfully")
+        
+        # Unpack results (10 values)
         final_image = processed_result[0]
         full_grain_count = processed_result[1]
-        broken_grain_count = processed_result[2]
-        chalky_count = processed_result[3]
-        black_count = processed_result[4]
-        yellow_count = processed_result[5]
+        chalky_count = processed_result[2]
+        black_count = processed_result[3]
+        yellow_count = processed_result[4]
+        brown_count = processed_result[5]
         broken_percentages = processed_result[6]
-
-        # Set default values for stone and husk since new version doesn't detect them
-        stone_count = 0
-        husk_count = 0
-        brown_count = 0  # Also not detected in new version
+        broken_grain_count = processed_result[7]
+        stone_count = processed_result[8]
+        husk_count = processed_result[9]
+        
+        print("Results unpacked")
 
         # Calculate total count
         total_objects = full_grain_count + chalky_count + black_count + yellow_count + brown_count + broken_grain_count + stone_count + husk_count
+        print(f"Total objects detected: {total_objects}")
 
         # Save processed image with a timestamp-based filename
         processed_filename = f"processed_{int(time.time())}.jpg"
         processed_filepath = os.path.join(PROCESSED_FOLDER, processed_filename)
         cv2.imwrite(processed_filepath, final_image)
+        print(f"Saved processed image to: {processed_filepath}")
 
         # Cleanup old processed images (keep only 50)
         cleanup_old_images(PROCESSED_FOLDER, max_files=MAX_IMAGES)
@@ -279,6 +285,9 @@ def process_image_route():
             "husk_count": husk_count
         })
     except Exception as e:
+        import traceback
+        print("Error in process_image_route:")
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
@@ -462,21 +471,33 @@ def wifi_disconnect():
             'error': str(e)
         })
 
+@app.route('/upload', methods=['POST'])
+def upload_image():
+    """Handles file upload via AJAX and returns the image URL."""
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+        
+    if file:
+        try:
+            filename = secure_filename(f"upload_{int(time.time())}_{file.filename}")
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            
+            # Use 'static/uploads/filename' format for URL
+            image_url = url_for('static', filename=f'uploads/{filename}')
+            return jsonify({"success": True, "image_url": image_url})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    """Handles file upload and renders the main page."""
-    uploaded_image = None
-    if request.method == 'POST':
-        if 'file' not in request.files:
-            return render_template('index.html', error='No file uploaded')
-        file = request.files['file']
-        if file.filename == '':
-            return render_template('index.html', error='No selected file')
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(filepath)
-        uploaded_image = filepath
-    return render_template('index.html', uploaded_image=uploaded_image)
+    """Renders the main page."""
+    # Logic for POST is now handled by /upload and front-end JS
+    return render_template('index.html')
 
 @app.route('/system/shutdown', methods=['POST'])
 def system_shutdown():

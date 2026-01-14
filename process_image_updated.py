@@ -5,6 +5,7 @@ import sys
 import shutil
 import tensorflow as tf
 from tensorflow.keras.models import load_model
+import datetime
 
 # ==================== MODEL CONFIGURATION ====================
 # EfficientNet configuration
@@ -13,12 +14,33 @@ NUM_CLASSES = 6
 LABEL_MAP = {0: "black", 1: "brown", 2: "yellow", 3: "chalky", 4: "perfect", 5: "husk"}
 
 # Model path - EfficientNet Rice Classifier
-MODEL_PATH = '/home/rvce/Desktop/compiled/efficientnet_rice_final_inference.keras'
+MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'efficientnet_rice_final_inference.keras')
 
 # Load model once at startup
-print("Loading Keras model...")
-model = load_model(MODEL_PATH)
-print("Model loaded successfully!")
+model = None
+try:
+    print("--------------------------------------------------")
+    print("Initializing Rice Classification Model...")
+    print(f"Model path: {MODEL_PATH}")
+    
+    if os.path.exists(MODEL_PATH):
+        print(f"Path exists. Is directory: {os.path.isdir(MODEL_PATH)}")
+        # Check files if it is a directory
+        if os.path.isdir(MODEL_PATH):
+            print(f"Directory contents: {os.listdir(MODEL_PATH)}")
+    else:
+        print("ERROR: Model path does not exist!")
+        
+    print("Calling load_model...")
+    model = load_model(MODEL_PATH)
+    print("Model loaded successfully!")
+    print("--------------------------------------------------")
+except Exception as e:
+    import traceback
+    print("CRITICAL ERROR: Failed to load model!")
+    print(f"Error details: {e}")
+    traceback.print_exc()
+    print("--------------------------------------------------")
 
 # ==================== PREPROCESSING FUNCTIONS ====================
 
@@ -59,6 +81,10 @@ def classify_grain(grain_crop):
     img = preprocess_grain_image(grain_crop)
     img_batch = np.expand_dims(img, axis=0)  # Add batch dimension
     
+    if model is None:
+        print("Error: Model not loaded, returning 'unknown'")
+        return "unknown", 0.0
+
     predictions = model.predict(img_batch, verbose=0)
     predicted_class = np.argmax(predictions[0])
     confidence = predictions[0][predicted_class]
@@ -110,6 +136,10 @@ def predict_images_from_folder(folder_path):
         img = load_and_preprocess_image_from_path(img_path)
         img_expanded = tf.expand_dims(img, 0)
         
+        if model is None:
+            print("Error: Model not loaded, cannot predict.")
+            continue
+
         predictions = model.predict(img_expanded, verbose=0)
         predicted_class = np.argmax(predictions)
         
@@ -123,131 +153,137 @@ def predict_images_from_folder(folder_path):
 
 def detect_and_count_rice_grains_ml(original_image):
     """
-    Detects rice grains using watershed segmentation and classifies them using ML model.
+    Detects rice grains using HSV color masking (Blue Background) and classifies them using ML model.
     Saves grain crops to 'grains' folder for batch prediction.
     
     Args:
         original_image (numpy array): Input image containing rice grains.
         
     Returns:
-        tuple: (visualization_image, class_counts, percentage_list, broken_grain_count)
+        tuple: (visualization_image, percentage_list, broken_grain_count)
     """
     if original_image is None:
         raise ValueError("Could not read image")
     
     visualization_copy = original_image.copy()
     grains_dir = "grains"
+    if os.path.exists(grains_dir):
+        shutil.rmtree(grains_dir)
     os.makedirs(grains_dir, exist_ok=True)
     
     img_counter = 1
     
-    # Convert to HSV and grayscale
+    # Constants for Rice Segmentation (Adapted from Dal Logic)
+    MIN_GRAIN_AREA = 50   # Minimum area to be considered a grain
+    
+    # Predefined Blue Background Range (Adjust if needed)
+    LOWER_BLUE = np.array([100, 100, 100])
+    UPPER_BLUE = np.array([140, 255, 255])
+    
+    # Convert to HSV and apply blue mask
     hsv = cv2.cvtColor(original_image, cv2.COLOR_BGR2HSV)
-    grayscale_image = cv2.cvtColor(hsv, cv2.COLOR_BGR2GRAY)
+    blue_mask = cv2.inRange(hsv, LOWER_BLUE, UPPER_BLUE)
     
-    # Thresholding to create a binary image
-    _, binary_image = cv2.threshold(
-        grayscale_image, 0, 255, 
-        cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    # Invert mask: We want what is NOT blue (the grains)
+    grain_mask = cv2.bitwise_not(blue_mask)
     
-    # Morphological operations to clean the image
-    morphological_kernel = np.ones((3, 3), np.uint8)
-    cleaned_image = cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, morphological_kernel, iterations=2)
-    cleaned_image = cv2.morphologyEx(cleaned_image, cv2.MORPH_CLOSE, morphological_kernel, iterations=1)
+    # Morphological opening to remove noise
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    grain_mask = cv2.morphologyEx(grain_mask, cv2.MORPH_OPEN, kernel, iterations=2)
     
-    # Background extraction
-    background = cv2.dilate(cleaned_image, morphological_kernel, iterations=2)
+    # Find contours
+    contours, _ = cv2.findContours(grain_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
-    # Distance transform for watershed preparation
-    distance_transform = cv2.distanceTransform(cleaned_image, cv2.DIST_L2, 3)
-    cv2.normalize(distance_transform, distance_transform, 0, 1.0, cv2.NORM_MINMAX)
+    print(f"DEBUG: Found {len(contours)} contours.")
     
-    # Foreground detection
-    _, foreground = cv2.threshold(distance_transform, 0.3 * distance_transform.max(), 255, 0)
-    foreground = np.uint8(foreground)
-    
-    # Unknown region identification
-    unknown_region = cv2.subtract(background, foreground)
-    
-    # Connected components labeling
-    _, markers = cv2.connectedComponents(foreground)
-    markers += 1
-    markers[unknown_region == 255] = 0
-    
-    # Watershed segmentation
-    markers = cv2.watershed(original_image, markers)
-    unique_markers = np.unique(markers)
-    
-    # Initialize counters
+    # Initialize counters for broken classification (heuristic based)
     broken_grain_count = 0
     broken_25_count = 0
     broken_50_count = 0
     broken_75_count = 0
-    average_rice_area = 190
     
-    # Region size for grain extraction
-    region_size = 64  # Can be changed to match IMAGE_SIZE if needed
+    average_rice_area = 190  # Reference for broken calculation
+    
+    region_size = 64
     half_size = region_size // 2
     img_h, img_w = original_image.shape[:2]
     
     # Process each grain
-    for label in unique_markers:
-        if label <= 1:
+    for i, contour in enumerate(contours):
+        area = cv2.contourArea(contour)
+        
+        # Filter small noise
+        if area < MIN_GRAIN_AREA:
             continue
             
-        grain_mask = np.zeros(grayscale_image.shape, dtype="uint8")
-        grain_mask[markers == label] = 255
-        contours, _ = cv2.findContours(grain_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Optional: Filter very large blobs that might be clusters (or handle them later)
+        # if area > 2000: continue 
+
+        # --- 1. Draw Contour on Visualization ---
+        cv2.drawContours(visualization_copy, [contour], -1, (0, 255, 0), 2)
         
-        if contours:
-            area = cv2.contourArea(contours[0])
-            M = cv2.moments(contours[0])
+        # --- 2. Calculate Heuristics for Broken Rice (Optional parallel check) ---
+        area_ratio = area / average_rice_area
+        if area_ratio <= 0.75:
+            broken_grain_count += 1
+            if area_ratio > 0.45:
+                broken_25_count += 1
+            elif area_ratio > 0.3:
+                broken_50_count += 1
+            else:
+                broken_75_count += 1
+            # Mark broken in Red
+            cv2.drawContours(visualization_copy, [contour], -1, (0, 0, 255), 2)
+        
+        # --- 3. Extract Grain for ML Classification ---
+        M = cv2.moments(contour)
+        if M["m00"] != 0:
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
             
-            if M["m00"] != 0:
-                cX = int(M["m10"] / M["m00"])
-                cY = int(M["m01"] / M["m00"])
-                
-                area_ratio = area / average_rice_area
-                
-                # Classify broken rice by area
-                if area_ratio <= 0.75:
-                    broken_grain_count += 1
-                    if area_ratio > 0.45:
-                        broken_25_count += 1
-                    elif area_ratio > 0.3:
-                        broken_50_count += 1
-                    else:
-                        broken_75_count += 1
-                    cv2.drawContours(visualization_copy, contours, -1, (0, 0, 255), thickness=2)
-                    continue
-                
-                # Extract grain region for ML classification
-                adj_cX = min(max(cX, half_size), img_w - half_size)
-                adj_cY = min(max(cY, half_size), img_h - half_size)
-                grain_region = cv2.getRectSubPix(
-                    original_image, 
-                    (region_size, region_size), 
-                    (float(adj_cX), float(adj_cY))
-                )
-                
-                # Create blue background and composite grain
-                background_img = np.full((region_size, region_size, 3), (255, 0, 0), dtype=np.uint8)
-                
-                # Shift contour to local coordinates
-                contour = contours[0].copy().astype(np.int32)
-                contour[:, 0, 0] = contour[:, 0, 0] - (adj_cX - half_size)
-                contour[:, 0, 1] = contour[:, 0, 1] - (adj_cY - half_size)
-                
-                mask = np.zeros((region_size, region_size), dtype=np.uint8)
-                cv2.drawContours(mask, [contour], -1, 255, thickness=cv2.FILLED)
-                
-                composed = background_img.copy()
-                composed[mask == 255] = grain_region[mask == 255]
-                
-                # Save grain image for batch prediction
-                cv2.imwrite(os.path.join(grains_dir, f"{img_counter}.png"), composed)
-                img_counter += 1
-    
+            # Extract square region centered on the grain
+            adj_cX = min(max(cX, half_size), img_w - half_size)
+            adj_cY = min(max(cY, half_size), img_h - half_size)
+            
+            grain_region = cv2.getRectSubPix(
+                original_image, 
+                (region_size, region_size), 
+                (float(adj_cX), float(adj_cY))
+            )
+            
+            # Create cleaner synthetic background for the crop
+            # We want the grain isolated on a blue/black background for consistent inference
+            # 1. Create a mask just for this contour in the local 64x64 region
+            mask_local = np.zeros((region_size, region_size), dtype=np.uint8)
+            
+            # We need to shift the contour to the local coordinates of the 64x64 crop
+            contour_shifted = contour - [adj_cX - half_size, adj_cY - half_size]
+            
+            # Draw the filled contour on the local mask
+            cv2.drawContours(mask_local, [contour_shifted], -1, 255, thickness=cv2.FILLED)
+            
+            # Create a blue background image
+            background_img = np.full((region_size, region_size, 3), (255, 0, 0), dtype=np.uint8)
+            
+            # Combine: Place the masked grain onto the blue background
+            composed = background_img.copy()
+            # Only copy pixels where the mask is active
+            composed[mask_local == 255] = grain_region[mask_local == 255]
+            
+            # Save for batch prediction
+            cv2.imwrite(os.path.join(grains_dir, f"{img_counter}.png"), composed)
+            img_counter += 1
+
+    # Write debug log
+    with open("debug_log.txt", "w") as f:
+        f.write(f"Timestamp: {datetime.datetime.now()}\n")
+        f.write(f"Contours found: {len(contours)}\n")
+        f.write(f"Model Status: {'Loaded' if model else 'Not Loaded'}\n")
+        if model:
+            f.write("Prediction Mode: ML Model (EfficientNet)\n")
+        else:
+            f.write("Prediction Mode: FALLBACK (Model failed)\n")
+
     percentage_list = {
         "25%": broken_25_count,
         "50%": broken_50_count,
