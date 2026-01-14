@@ -1,0 +1,93 @@
+2025-05-29 17:41:58,989 - mongodb_sync - INFO - No internet connection available. Skipping MongoDB sync.
+2025-05-29 17:45:29,586 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:45:29] "POST /capture HTTP/1.1" 200 -
+2025-05-29 17:45:29,606 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:45:29] "GET /static/captured/captured_1748520929.jpg?t=1748520929598 HTTP/1.1" 200 -
+2025-05-29 17:45:37,116 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:45:37] "POST /capture HTTP/1.1" 200 -
+2025-05-29 17:45:37,161 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:45:37] "GET /static/captured/captured_1748520937.jpg?t=1748520937131 HTTP/1.1" 200 -
+2025-05-29 17:46:04,912 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:46:04] "GET /video_feed HTTP/1.1" 200 -
+2025-05-29 17:46:26,770 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:46:26] "[33mPOST /process_image HTTP/1.1[0m" 404 -
+2025-05-29 17:46:32,530 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:46:32] "POST /capture HTTP/1.1" 200 -
+2025-05-29 17:46:32,626 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:46:32] "GET /static/captured/captured_1748520992.jpg?t=1748520992557 HTTP/1.1" 200 -
+2025-05-29 17:47:18,277 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:47:18] "POST /process_image HTTP/1.1" 200 -
+2025-05-29 17:47:18,323 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:47:18] "GET /static/processed/processed_1748521038.jpg?t=1748521038298 HTTP/1.1" 200 -
+2025-05-29 17:47:58,897 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:47:58] "GET /video_feed HTTP/1.1" 200 -
+2025-05-29 17:49:44,015 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:49:44] "POST /capture HTTP/1.1" 200 -
+2025-05-29 17:49:44,113 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:49:44] "GET /static/captured/captured_1748521184.jpg?t=1748521184036 HTTP/1.1" 200 -
+2025-05-29 17:50:37,292 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:50:37] "POST /process_image HTTP/1.1" 200 -
+2025-05-29 17:50:37,337 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:50:37] "GET /static/processed/processed_1748521237.jpg?t=1748521237310 HTTP/1.1" 200 -
+2025-05-29 17:58:06,870 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:58:06] "POST /capture HTTP/1.1" 200 -
+2025-05-29 17:58:06,893 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:58:06] "GET /static/captured/captured_1748521686.jpg?t=1748521686881 HTTP/1.1" 200 -
+2025-05-29 17:58:39,506 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:58:39] "POST /process_image HTTP/1.1" 200 -
+2025-05-29 17:58:39,550 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:58:39] "GET /static/processed/processed_1748521719.jpg?t=1748521719525 HTTP/1.1" 200 -
+2025-05-29 17:58:57,592 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:58:57] "GET /video_feed HTTP/1.1" 200 -
+2025-05-29 17:58:58,915 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:58:58] "POST /capture HTTP/1.1" 200 -
+2025-05-29 17:58:58,999 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:58:58] "GET /static/captured/captured_1748521738.jpg?t=1748521738941 HTTP/1.1" 200 -
+2025-05-29 17:59:32,421 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:59:32] "POST /process_image HTTP/1.1" 200 -
+2025-05-29 17:59:32,464 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 17:59:32] "GET /static/processed/processed_1748521772.jpg?t=1748521772439 HTTP/1.1" 200 -
+2025-05-29 18:05:37,421 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:05:37] "GET /video_feed HTTP/1.1" 200 -
+2025-05-29 18:05:57,493 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:05:57] "POST /capture HTTP/1.1" 200 -
+2025-05-29 18:05:57,588 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:05:57] "GET /static/captured/captured_1748522157.jpg?t=1748522157522 HTTP/1.1" 200 -
+2025-05-29 18:06:52,641 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:06:52] "POST /process_image HTTP/1.1" 200 -
+2025-05-29 18:06:52,698 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:06:52] "GET /static/processed/processed_1748522212.jpg?t=1748522212667 HTTP/1.1" 200 -
+2025-05-29 18:12:14,041 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:12:14] "GET /video_feed HTTP/1.1" 200 -
+2025-05-29 18:12:15,354 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:12:15] "POST /capture HTTP/1.1" 200 -
+2025-05-29 18:12:15,457 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:12:15] "GET /static/captured/captured_1748522535.jpg?t=1748522535387 HTTP/1.1" 200 -
+2025-05-29 18:12:48,876 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:12:48] "GET /video_feed HTTP/1.1" 200 -
+2025-05-29 18:12:54,847 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:12:54] "POST /capture HTTP/1.1" 200 -
+2025-05-29 18:12:54,927 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:12:54] "GET /static/captured/captured_1748522574.jpg?t=1748522574871 HTTP/1.1" 200 -
+2025-05-29 18:13:01,486 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:13:01] "POST /process_dal HTTP/1.1" 200 -
+2025-05-29 18:13:01,530 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:13:01] "GET /static/processed/processed_dal_1748522581.jpg?t=1748522581505 HTTP/1.1" 200 -
+2025-05-29 18:19:26,651 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:19:26] "GET /video_feed HTTP/1.1" 200 -
+2025-05-29 18:19:28,130 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:19:28] "POST /capture HTTP/1.1" 200 -
+2025-05-29 18:19:28,235 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:19:28] "GET /static/captured/captured_1748522968.jpg?t=1748522968173 HTTP/1.1" 200 -
+2025-05-29 18:19:31,731 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:19:31] "POST /process_dal HTTP/1.1" 200 -
+2025-05-29 18:19:31,771 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:19:31] "GET /static/processed/processed_dal_1748522971.jpg?t=1748522971747 HTTP/1.1" 200 -
+2025-05-29 18:20:22,036 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:20:22] "GET /wifi HTTP/1.1" 200 -
+2025-05-29 18:20:22,210 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:20:22] "[36mGET /static/js/wifi.js HTTP/1.1[0m" 304 -
+2025-05-29 18:20:22,213 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:20:22] "[36mGET /static/css/wifi.css HTTP/1.1[0m" 304 -
+2025-05-29 18:20:22,887 - wifi_manager - INFO - ======= WiFi Manager Module Initialized =======
+2025-05-29 18:20:22,973 - wifi_manager - INFO - NetworkManager available: True
+2025-05-29 18:20:22,988 - wifi_manager - INFO - === Starting get_connection_status() ===
+2025-05-29 18:20:23,030 - wifi_manager - INFO - === Completed get_connection_status() ===
+2025-05-29 18:20:23,031 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:20:23] "GET /wifi/status HTTP/1.1" 200 -
+2025-05-29 18:20:29,062 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:20:29] "GET / HTTP/1.1" 200 -
+2025-05-29 18:20:29,158 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:20:29] "[36mGET /static/bootstrap.css HTTP/1.1[0m" 304 -
+2025-05-29 18:20:29,173 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:20:29] "[36mGET /static/styles.css HTTP/1.1[0m" 304 -
+2025-05-29 18:20:29,189 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:20:29] "[36mGET /static/bootstrap.bundle.js HTTP/1.1[0m" 304 -
+2025-05-29 18:20:29,233 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:20:29] "GET /video_feed HTTP/1.1" 200 -
+2025-05-29 18:20:29,362 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:20:29] "[36mGET /static/script.js HTTP/1.1[0m" 304 -
+2025-05-29 18:20:34,739 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:20:34] "GET /wifi HTTP/1.1" 200 -
+2025-05-29 18:20:34,965 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:20:34] "[36mGET /static/css/wifi.css HTTP/1.1[0m" 304 -
+2025-05-29 18:20:34,979 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:20:34] "[36mGET /static/js/wifi.js HTTP/1.1[0m" 304 -
+2025-05-29 18:20:35,191 - wifi_manager - INFO - === Starting get_connection_status() ===
+2025-05-29 18:20:35,327 - wifi_manager - INFO - === Completed get_connection_status() ===
+2025-05-29 18:20:35,330 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:20:35] "GET /wifi/status HTTP/1.1" 200 -
+2025-05-29 18:20:39,659 - werkzeug - INFO - 127.0.0.1 - - [29/May/2025 18:20:39] "POST /system/shutdown HTTP/1.1" 200 -
+2025-06-02 15:13:14,072 - mongodb_sync - INFO - Attempting to connect to MongoDB...
+2025-06-02 15:13:16,131 - mongodb_sync - INFO - New MongoDB connection established successfully
+2025-06-02 15:13:16,232 - mongodb_sync - INFO - Synced rice data from /home/rvce/Desktop/compiled/local_storage/rice/rice_20250602_151313_175996.json to MongoDB.
+2025-06-02 16:17:14,028 - mongodb_sync - INFO - Attempting to connect to MongoDB...
+2025-06-02 16:17:15,525 - mongodb_sync - INFO - New MongoDB connection established successfully
+2025-06-02 16:17:15,599 - mongodb_sync - INFO - Synced dal data from /home/rvce/Desktop/compiled/local_storage/dal/dal_20250602_161713_575811.json to MongoDB.
+2025-06-02 16:17:24,311 - werkzeug - INFO - 192.168.2.1 - - [02/Jun/2025 16:17:24] "POST /capture HTTP/1.1" 200 -
+2025-06-02 16:17:24,558 - werkzeug - INFO - 192.168.2.1 - - [02/Jun/2025 16:17:24] "GET /static/captured/captured_1748861244.jpg?t=1748861244398 HTTP/1.1" 200 -
+2025-06-02 16:17:28,718 - werkzeug - INFO - 192.168.2.1 - - [02/Jun/2025 16:17:28] "POST /process_dal HTTP/1.1" 200 -
+2025-06-02 16:17:28,763 - werkzeug - INFO - 192.168.2.1 - - [02/Jun/2025 16:17:28] "GET /static/processed/processed_dal_1748861248.jpg?t=1748861248721 HTTP/1.1" 200 -
+2025-06-02 16:18:22,563 - werkzeug - INFO - 192.168.2.1 - - [02/Jun/2025 16:18:22] "GET /video_feed HTTP/1.1" 200 -
+2025-06-02 16:19:13,154 - werkzeug - INFO - 192.168.2.1 - - [02/Jun/2025 16:19:13] "POST /capture HTTP/1.1" 200 -
+2025-06-02 16:19:13,420 - werkzeug - INFO - 192.168.2.1 - - [02/Jun/2025 16:19:13] "GET /static/captured/captured_1748861353.jpg?t=1748861353300 HTTP/1.1" 200 -
+2025-06-02 16:19:15,724 - werkzeug - INFO - 192.168.2.1 - - [02/Jun/2025 16:19:15] "POST /process_dal HTTP/1.1" 200 -
+2025-06-02 16:19:15,764 - werkzeug - INFO - 192.168.2.1 - - [02/Jun/2025 16:19:15] "GET /static/processed/processed_dal_1748861355.jpg?t=1748861355731 HTTP/1.1" 200 -
+2025-06-02 16:20:10,781 - werkzeug - INFO - 192.168.2.1 - - [02/Jun/2025 16:20:10] "GET /video_feed HTTP/1.1" 200 -
+2025-06-02 16:20:13,326 - werkzeug - INFO - 192.168.2.1 - - [02/Jun/2025 16:20:13] "POST /capture HTTP/1.1" 200 -
+2025-06-02 16:20:13,441 - werkzeug - INFO - 192.168.2.1 - - [02/Jun/2025 16:20:13] "GET /static/captured/captured_1748861413.jpg?t=1748861413344 HTTP/1.1" 200 -
+2025-06-02 16:20:15,698 - werkzeug - INFO - 192.168.2.1 - - [02/Jun/2025 16:20:15] "POST /process_dal HTTP/1.1" 200 -
+2025-06-02 16:20:15,747 - werkzeug - INFO - 192.168.2.1 - - [02/Jun/2025 16:20:15] "GET /static/processed/processed_dal_1748861415.jpg?t=1748861415699 HTTP/1.1" 200 -
+2025-06-02 16:24:52,589 - werkzeug - INFO - 127.0.0.1 - - [02/Jun/2025 16:24:52] "GET /wifi HTTP/1.1" 200 -
+2025-06-02 16:24:52,666 - werkzeug - INFO - 127.0.0.1 - - [02/Jun/2025 16:24:52] "[36mGET /static/css/wifi.css HTTP/1.1[0m" 304 -
+2025-06-02 16:24:52,670 - werkzeug - INFO - 127.0.0.1 - - [02/Jun/2025 16:24:52] "[36mGET /static/js/wifi.js HTTP/1.1[0m" 304 -
+2025-06-02 16:24:52,967 - wifi_manager - INFO - ======= WiFi Manager Module Initialized =======
+2025-06-02 16:24:52,990 - wifi_manager - INFO - NetworkManager available: True
+2025-06-02 16:24:53,007 - wifi_manager - INFO - === Starting get_connection_status() ===
+2025-06-02 16:24:53,056 - wifi_manager - INFO - === Completed get_connection_status() ===
+2025-06-02 16:24:53,057 - werkzeug - INFO - 127.0.0.1 - - [02/Jun/2025 16:24:53] "GET /wifi/status HTTP/1.1" 200 -
+2025-06-02 16:24:57,227 - werkzeug - INFO - 127.0.0.1 - - [02/Jun/2025 16:24:57] "POST /system/shutdown HTTP/1.1" 200 -

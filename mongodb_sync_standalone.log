@@ -1,0 +1,146 @@
+2025-05-28 17:46:54,100 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-05-28 17:46:54,100 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-05-28 17:46:54,148 - mongodb_sync_standalone - INFO - Internet available on startup - attempting initial sync
+2025-05-28 17:46:54,181 - mongodb_sync_standalone - INFO - Attempting to connect to MongoDB...
+2025-05-28 17:47:01,036 - mongodb_sync_standalone - INFO - New MongoDB connection established successfully
+2025-05-29 00:55:30,424 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-05-29 00:55:40,137 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-05-29 00:55:40,141 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-05-29 00:55:40,142 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-05-29 06:31:26,824 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-05-29 06:31:36,399 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-05-29 06:31:36,402 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-05-29 06:31:36,404 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-05-29 16:35:06,545 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-05-29 16:35:06,547 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-05-29 16:35:06,548 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-05-29 16:48:35,328 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-05-29 16:48:35,338 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-05-29 16:48:35,338 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-05-29 17:23:26,080 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-05-29 17:23:35,598 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-05-29 17:23:35,606 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-05-29 17:23:35,607 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-05-29 17:34:20,158 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-05-29 17:34:29,485 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-05-29 17:34:29,490 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-05-29 17:34:29,491 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-05-29 17:42:29,507 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 17:42:29,508 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 17:44:29,510 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 17:44:29,510 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 17:46:29,512 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 17:46:29,513 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 17:48:29,517 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 17:48:29,517 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 17:50:29,518 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 17:50:29,519 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 17:52:29,520 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 17:52:29,521 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 17:54:29,522 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 17:54:29,523 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 17:56:29,524 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 17:56:29,525 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 17:58:29,527 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 17:58:29,529 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 18:00:29,530 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 18:00:29,531 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 18:02:29,532 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 18:02:29,535 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 18:04:29,536 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 18:04:29,536 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 18:06:29,538 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 18:06:29,540 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 18:08:29,542 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 18:08:29,545 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 18:10:29,546 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 18:10:29,547 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 18:12:29,548 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 18:12:29,549 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 18:14:29,550 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 18:14:29,551 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 18:16:29,552 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 18:16:29,553 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 18:18:29,554 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 18:18:29,555 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 18:20:29,557 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 18:20:29,559 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-29 18:20:41,424 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-05-29 18:20:51,223 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-05-29 18:20:51,229 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-05-29 18:20:51,230 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-05-29 18:20:51,255 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-29 18:20:51,257 - mongodb_sync_standalone - INFO - No internet connection, skipping MongoDB sync
+2025-05-30 14:16:02,773 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-05-30 14:16:02,815 - mongodb_sync_standalone - INFO - Internet connection available, attempting sync
+2025-05-30 14:16:02,851 - mongodb_sync_standalone - INFO - Attempting to connect to MongoDB...
+2025-05-30 14:16:07,575 - mongodb_sync_standalone - INFO - New MongoDB connection established successfully
+2025-05-30 14:16:07,666 - mongodb_sync_standalone - INFO - Synced rice data from /home/rvce/Desktop/compiled/local_storage/rice/rice_20250529_174158_341724.json to MongoDB.
+2025-05-30 14:16:07,670 - mongodb_sync_standalone - INFO - MongoDB sync completed successfully
+2025-05-30 14:33:58,636 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-05-30 14:34:06,397 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-05-30 14:34:06,404 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-05-30 14:34:06,405 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-06-02 14:53:10,372 - mongodb_sync_standalone - INFO - Found 1 files to sync (1 rice, 0 dal)
+2025-06-02 14:53:10,408 - mongodb_sync_standalone - INFO - Internet connection available, attempting sync
+2025-06-02 14:53:10,455 - mongodb_sync_standalone - INFO - Attempting to connect to MongoDB...
+2025-06-02 14:53:12,645 - mongodb_sync_standalone - INFO - New MongoDB connection established successfully
+2025-06-02 14:53:12,724 - mongodb_sync_standalone - INFO - Synced rice data from /home/rvce/Desktop/compiled/local_storage/rice/rice_20250602_145145_626026.json to MongoDB.
+2025-06-02 14:53:12,725 - mongodb_sync_standalone - INFO - MongoDB sync completed successfully
+2025-06-02 15:05:17,423 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-06-02 15:05:24,489 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-06-02 15:05:24,494 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-06-02 15:05:24,497 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-06-02 16:24:58,754 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-06-02 16:25:08,981 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-06-02 16:25:08,983 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-06-02 16:25:08,984 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-06-09 14:41:20,964 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-06-09 14:41:20,976 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-06-09 14:41:20,977 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-06-09 14:45:01,982 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-06-09 16:32:37,911 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-06-09 16:32:37,914 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-06-09 16:32:37,915 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-06-09 17:12:39,967 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-06-09 17:12:39,974 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-06-09 17:12:39,975 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-06-09 17:47:09,002 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-06-09 17:47:18,983 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-06-09 17:47:18,991 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-06-09 17:47:18,993 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-06-11 14:36:52,100 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-06-11 14:49:47,200 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-06-11 14:49:47,209 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-06-11 14:49:47,210 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-06-11 14:51:02,310 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-06-11 15:03:56,905 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-06-11 15:03:56,914 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-06-11 15:03:56,915 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-06-11 15:06:15,781 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-06-11 15:44:37,688 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-06-11 15:44:37,695 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-06-11 15:44:37,696 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-06-11 15:48:38,976 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-06-11 15:52:48,769 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-06-11 15:52:48,772 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-06-11 15:52:48,773 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-06-11 15:58:18,881 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-06-11 16:08:22,797 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-06-11 16:08:22,800 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-06-11 16:08:22,801 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-06-11 16:08:23,553 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-06-11 16:08:23,557 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-06-11 16:08:23,559 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-06-11 16:11:34,966 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-06-11 16:11:42,949 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-06-11 16:11:42,951 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-06-11 16:11:42,951 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-06-13 15:11:14,286 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-06-13 15:11:05,842 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-06-13 15:11:05,849 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-06-13 15:11:05,850 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync
+2025-06-20 05:34:11,728 - mongodb_sync_standalone - INFO - Received shutdown signal. Cleaning up...
+2025-06-20 05:34:21,215 - mongodb_sync_standalone - INFO - === MongoDB Sync Standalone Process Started ===
+2025-06-20 05:34:21,222 - mongodb_sync_standalone - INFO - Monitoring directory: /home/rvce/Desktop/compiled/local_storage
+2025-06-20 05:34:21,223 - mongodb_sync_standalone - INFO - No internet connection on startup - skipping initial sync

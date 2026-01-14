@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi Configuration</title>
+    <link rel="stylesheet" href="/static/css/wifi.css">
+</head>
+<body>
+    <h3>WiFi Configuration</h3>
+    
+    <div class="card">
+        <div id="current-connection" class="current-connection hidden">
+            <h3>Current Connection</h3>
+            <p>Connected to: <strong id="current-ssid">Not connected</strong></p>
+            <p>IP Address: <strong id="current-ip">None</strong></p>
+            <button id="disconnect-button" class="disconnect-btn" onclick="disconnectWifi()">
+                Disconnect
+            </button>
+        </div>
+        
+        <div id="scanning-status" class="status info hidden">
+            <span class="spinner"></span> Scanning for networks...
+        </div>
+        
+        <button id="scan-button" class="form-group" onclick="scanNetworks()">
+            Scan for Networks
+        </button>
+        
+        <div id="network-list-container" class="hidden">
+            <h3>Available Networks</h3>
+            <div id="network-list" class="network-list">
+                <!-- Networks will be populated here -->
+            </div>
+        </div>
+        
+        <form id="wifi-form" method="POST" class="hidden">
+            <div class="form-group">
+                <label for="ssid">Network Name (SSID):</label>
+                <input type="text" id="ssid" name="ssid" required readonly>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <div class="password-wrapper">
+                    <input type="text" id="password" name="password" required>
+                </div>
+            </div>
+            
+            <button type="submit">Connect</button>
+        </form>
+    </div>
+    
+    <div id="connection-status" class="status hidden"></div>
+    <div style="position: fixed; top: 5px; left:5px" id="navigations">
+        <a href="/" class="back-link">Back to Home</a><br/>
+        <button id="shutdown-btn" class="btn-warning"  onclick="shutdownSystem()">Shutdown</button><br/>
+        <button id="restart-btn" class="btn-secondary" onclick="restartSystem()">Restart</button>
+    </div>
+    <!-- Virtual Keyboard -->
+    <div class="virtual-keyboard" id="virtual-keyboard">
+        <div class="keyboard-row" id="row1"></div>
+        <div class="keyboard-row" id="row2"></div>
+        <div class="keyboard-row" id="row3"></div>
+        <div class="keyboard-row">
+            <div class="keyboard-key keyboard-shift" id="shift-key">Shift</div>
+            <div class="keyboard-key keyboard-special" id="special-key">123!@</div>
+            <div class="keyboard-key keyboard-space" onclick="typeKey(' ')">Space</div>
+            <div class="keyboard-key keyboard-backspace" onclick="deleteChar()">⌫</div>
+            <div class="keyboard-key keyboard-done" onclick="hideKeyboard()">Done</div>
+        </div>
+    </div>
+    
+    <script src="/static/js/wifi.js"></script>
+</body>
+</html>

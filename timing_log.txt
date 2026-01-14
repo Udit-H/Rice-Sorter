@@ -1,0 +1,168 @@
+
+--- Timings for one image ---
+preprocessing: 0.0098 sec
+segmentation: 0.0889 sec
+watershed: 0.1040 sec
+classification: 0.6887 sec
+total: 0.8915 sec
+
+--- Timings for one image ---
+preprocessing: 0.0140 sec
+segmentation: 0.0845 sec
+watershed: 0.1051 sec
+classification: 0.7394 sec
+total: 0.9431 sec
+
+--- Timings for one image ---
+preprocessing: 0.0098 sec
+segmentation: 0.0828 sec
+watershed: 0.1001 sec
+classification: 0.3878 sec
+total: 0.5805 sec
+
+--- Timings for one image ---
+preprocessing: 0.0133 sec
+segmentation: 0.0879 sec
+watershed: 0.0999 sec
+classification: 0.4900 sec
+total: 0.6911 sec
+
+--- Timings for one image ---
+preprocessing: 0.0092 sec
+segmentation: 0.0437 sec
+watershed: 0.0900 sec
+classification: 0.7280 sec
+total: 0.8709 sec
+
+--- Timings for one image ---
+preprocessing: 0.0158 sec
+segmentation: 0.0964 sec
+watershed: 0.1011 sec
+classification: 0.7153 sec
+total: 0.9286 sec
+
+--- Timings for one image ---
+preprocessing: 0.0145 sec
+segmentation: 0.0773 sec
+watershed: 0.0989 sec
+classification: 0.5088 sec
+total: 0.6996 sec
+
+--- Timings for one image ---
+preprocessing: 0.0053 sec
+segmentation: 0.0757 sec
+watershed: 0.0992 sec
+classification: 0.4899 sec
+total: 0.6700 sec
+
+--- Timings for one image ---
+preprocessing: 0.0196 sec
+segmentation: 0.0875 sec
+watershed: 0.1009 sec
+classification: 0.7353 sec
+total: 0.9433 sec
+
+--- Timings for one image ---
+preprocessing: 0.0175 sec
+segmentation: 0.0727 sec
+watershed: 0.0963 sec
+classification: 0.7375 sec
+total: 0.9241 sec
+
+--- Timings for one image ---
+preprocessing: 0.0186 sec
+segmentation: 0.0760 sec
+watershed: 0.0996 sec
+classification: 0.5102 sec
+total: 0.7045 sec
+
+--- Timings for one image ---
+preprocessing: 0.0099 sec
+segmentation: 0.0762 sec
+watershed: 0.1011 sec
+classification: 0.4904 sec
+total: 0.6777 sec
+
+--- Timings for one image ---
+preprocessing: 0.0093 sec
+segmentation: 0.0439 sec
+watershed: 0.0943 sec
+classification: 0.7469 sec
+total: 0.8943 sec
+
+--- Timings for one image ---
+preprocessing: 0.0194 sec
+segmentation: 0.0913 sec
+watershed: 0.1017 sec
+classification: 0.5475 sec
+total: 0.7600 sec
+
+--- Timings for one image ---
+preprocessing: 0.0106 sec
+segmentation: 0.0815 sec
+watershed: 0.0997 sec
+classification: 0.5118 sec
+total: 0.7037 sec
+
+--- Timings for one image ---
+preprocessing: 0.0123 sec
+segmentation: 0.0771 sec
+watershed: 0.0995 sec
+classification: 0.4904 sec
+total: 0.6792 sec
+
+--- Timings for one image ---
+preprocessing: 0.0350 sec
+segmentation: 0.0914 sec
+watershed: 0.0449 sec
+classification: 0.3535 sec
+total: 0.5248 sec
+
+--- Timings for one image ---
+preprocessing: 0.0044 sec
+segmentation: 0.0408 sec
+watershed: 0.0384 sec
+classification: 0.3130 sec
+total: 0.3967 sec
+
+--- Timings for one image ---
+preprocessing: 0.0041 sec
+segmentation: 0.0398 sec
+watershed: 0.0379 sec
+classification: 0.2219 sec
+total: 0.3037 sec
+
+--- Timings for one image ---
+preprocessing: 0.0040 sec
+segmentation: 0.0393 sec
+watershed: 0.0379 sec
+classification: 0.2118 sec
+total: 0.2930 sec
+
+--- Timings for one image ---
+preprocessing: 0.0091 sec
+segmentation: 0.0425 sec
+watershed: 0.0411 sec
+classification: 0.3283 sec
+total: 0.4210 sec
+
+--- Timings for one image ---
+preprocessing: 0.0044 sec
+segmentation: 0.0408 sec
+watershed: 0.0396 sec
+classification: 0.3252 sec
+total: 0.4099 sec
+
+--- Timings for one image ---
+preprocessing: 0.0054 sec
+segmentation: 0.0403 sec
+watershed: 0.0384 sec
+classification: 0.2293 sec
+total: 0.3135 sec
+
+--- Timings for one image ---
+preprocessing: 0.0042 sec
+segmentation: 0.0389 sec
+watershed: 0.0383 sec
+classification: 0.2176 sec
+total: 0.2991 sec
