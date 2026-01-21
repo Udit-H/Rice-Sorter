@@ -169,96 +169,171 @@ def predict_images_from_folder(folder_path):
     
     return class_counts
 
-
 # ==================== GRAIN DETECTION & CLASSIFICATION ====================
+
+# def is_chalky_by_color(grain_crop):
+#     """
+#     Heuristic check: Chalky rice should be predominantly white/very light.
+#     Returns True if grain appears chalky based on color analysis.
+#     """
+#     # Convert to HSV for better color analysis
+#     hsv = cv2.cvtColor(grain_crop, cv2.COLOR_BGR2HSV)
+    
+#     # Chalky rice characteristics:
+#     # - High Value (brightness) > 200
+#     # - Low Saturation < 30
+#     v_channel = hsv[:, :, 2]
+#     s_channel = hsv[:, :, 1]
+    
+#     avg_value = np.mean(v_channel)
+#     avg_saturation = np.mean(s_channel)
+    
+#     # Chalky: bright and unsaturated
+#     return avg_value > 200 and avg_saturation < 30
 
 def detect_and_count_rice_grains_ml(original_image):
     """
-    Detects rice grains using HSV color masking (Blue Background) and classifies them using ML model.
-    Saves grain crops to 'grains' folder for batch prediction.
+    Detects rice grains using HSV color masking (excludes blue background).
+    Saves grain crops to 'grains' folder with classification in filename.
     
     Args:
         original_image (numpy array): Input image containing rice grains.
         
     Returns:
-        tuple: (visualization_image, percentage_list, broken_grain_count)
+        tuple: (visualization_image, percentage_list, broken_grain_count, class_counts)
     """
     if original_image is None:
         raise ValueError("Could not read image")
     
     visualization_copy = original_image.copy()
     grains_dir = "grains"
+    
     if os.path.exists(grains_dir):
-        shutil.rmtree(grains_dir)
-    os.makedirs(grains_dir, exist_ok=True)
+        for file in os.listdir(grains_dir):
+            file_path = os.path.join(grains_dir, file)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+    else:
+        os.makedirs(grains_dir, exist_ok=True)
     
     img_counter = 1
     
-    # Constants for Rice Segmentation (Adapted from Dal Logic)
-    MIN_GRAIN_AREA = 50   # Minimum area to be considered a grain
+    # Initialize class counts
+    class_counts = {label: 0 for label in LABEL_MAP.values()}
     
-    # Predefined Blue Background Range (Adjust if needed)
-    LOWER_BLUE = np.array([100, 100, 100])
-    UPPER_BLUE = np.array([140, 255, 255])
+    # Constants for Rice Segmentation
+    MIN_GRAIN_AREA = 50  # Minimum area for a valid grain
+    MAX_GRAIN_AREA = 750  # Maximum area to filter out large noise
     
-    # Convert to HSV and apply blue mask
+    # ==================== HSV-BASED SEGMENTATION (EXCLUDE BLUE) ====================
+    # Convert to HSV color space
     hsv = cv2.cvtColor(original_image, cv2.COLOR_BGR2HSV)
+    
+    # DEBUG: Sample background HSV values
+    h, w = hsv.shape[:2]
+    corners = [(10, 10), (10, w-10), (h-10, 10), (h-10, w-10)]
+    print("DEBUG: HSV values at corners (background):")
+    for y, x in corners:
+        print(f"  ({y},{x}): H={hsv[y,x,0]}, S={hsv[y,x,1]}, V={hsv[y,x,2]}")
+    
+    # STEP 1: Create mask to EXCLUDE blue background
+    # Blue background: H=100-130 (blue hue), high saturation
+    LOWER_BLUE = np.array([100, 100, 50])
+    UPPER_BLUE = np.array([140, 255, 255])
     blue_mask = cv2.inRange(hsv, LOWER_BLUE, UPPER_BLUE)
+    cv2.imwrite('debug_blue_mask.jpg', blue_mask)
     
-    # Invert mask: We want what is NOT blue (the grains)
-    grain_mask = cv2.bitwise_not(blue_mask)
+    # Invert to get non-blue regions (potential grains)
+    non_blue_mask = cv2.bitwise_not(blue_mask)
+    cv2.imwrite('debug_non_blue_mask.jpg', non_blue_mask)
     
-    # Morphological opening to remove noise
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-    grain_mask = cv2.morphologyEx(grain_mask, cv2.MORPH_OPEN, kernel, iterations=2)
+    # STEP 2: Also exclude very dark regions (shadows, noise)
+    # V channel < 50 is too dark
+    v_channel = hsv[:, :, 2]
+    bright_mask = (v_channel > 50).astype(np.uint8) * 255
+    cv2.imwrite('debug_bright_mask.jpg', bright_mask)
     
-    # Find contours
+    # STEP 3: Combine masks - grain must be non-blue AND bright enough
+    grain_mask = cv2.bitwise_and(non_blue_mask, bright_mask)
+    cv2.imwrite('debug_combined_mask.jpg', grain_mask)
+    
+    # ==================== MORPHOLOGICAL CLEANUP ====================
+    # Opening: remove small noise spots
+    kernel_open = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    grain_mask = cv2.morphologyEx(grain_mask, cv2.MORPH_OPEN, kernel_open, iterations=2)
+    
+    # Closing: fill small holes inside grains
+    kernel_close = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    grain_mask = cv2.morphologyEx(grain_mask, cv2.MORPH_CLOSE, kernel_close, iterations=2)
+    
+    # DEBUG: Save cleaned mask
+    cv2.imwrite('debug_grain_mask_cleaned.jpg', grain_mask)
+    
+    # ==================== FIND CONTOURS ====================
     contours, _ = cv2.findContours(grain_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
-    print(f"DEBUG: Found {len(contours)} contours.")
+    print(f"DEBUG: Found {len(contours)} raw contours.")
     
-    # Initialize counters for broken classification (heuristic based)
+    # ==================== CALCULATE DYNAMIC AVERAGE AREA ====================
+    all_areas = []
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        if MIN_GRAIN_AREA <= area <= MAX_GRAIN_AREA:
+            all_areas.append(area)
+    
+    if len(all_areas) == 0:
+        print("DEBUG: No valid grains found!")
+        return visualization_copy, {"25%": 0, "50%": 0, "75%": 0}, 0, class_counts
+    
+    # Calculate average from top 25% largest grains (these are full grains)
+    sorted_areas = sorted(all_areas, reverse=True)
+    top_25_percent = sorted_areas[:max(1, len(sorted_areas) // 4)]
+    average_rice_area = np.mean(top_25_percent)
+    
+    print(f"DEBUG: Valid grain count: {len(all_areas)}")
+    print(f"DEBUG: Area range: {min(all_areas):.0f} - {max(all_areas):.0f}")
+    print(f"DEBUG: Average rice area (top 25%): {average_rice_area:.0f}")
+    
+    # ==================== PROCESS EACH GRAIN ====================
     broken_grain_count = 0
     broken_25_count = 0
     broken_50_count = 0
     broken_75_count = 0
     
-    average_rice_area = 190  # Reference for broken calculation
-    
     region_size = 64
     half_size = region_size // 2
     img_h, img_w = original_image.shape[:2]
     
-    # Process each grain
+    valid_grain_count = 0
     for i, contour in enumerate(contours):
         area = cv2.contourArea(contour)
         
-        # Filter small noise
-        if area < MIN_GRAIN_AREA:
+        # Filter by area
+        if area < MIN_GRAIN_AREA or area > MAX_GRAIN_AREA:
             continue
-            
-        # Optional: Filter very large blobs that might be clusters (or handle them later)
-        # if area > 2000: continue 
-
-        # --- 1. Draw Contour on Visualization ---
-        cv2.drawContours(visualization_copy, [contour], -1, (0, 255, 0), 2)
         
-        # --- 2. Calculate Heuristics for Broken Rice (Optional parallel check) ---
+        valid_grain_count += 1
+        
+        # Calculate area ratio for broken detection
         area_ratio = area / average_rice_area
+        
+        # Broken rice: less than 75% of average
         if area_ratio <= 0.75:
             broken_grain_count += 1
-            if area_ratio > 0.45:
+            if area_ratio > 0.5:
                 broken_25_count += 1
-            elif area_ratio > 0.3:
+            elif area_ratio > 0.25:
                 broken_50_count += 1
             else:
                 broken_75_count += 1
             # Mark broken in Red
             cv2.drawContours(visualization_copy, [contour], -1, (0, 0, 255), 2)
-            # Skip ML classification for broken grains (model wasn't trained on broken fragments)
             continue
         
-        # --- 3. Extract Grain for ML Classification ---
+        # Full grain - Draw in Green
+        cv2.drawContours(visualization_copy, [contour], -1, (0, 255, 0), 2)
+        
+        # Extract Grain for ML Classification
         M = cv2.moments(contour)
         if M["m00"] != 0:
             cX = int(M["m10"] / M["m00"])
@@ -274,39 +349,34 @@ def detect_and_count_rice_grains_ml(original_image):
                 (float(adj_cX), float(adj_cY))
             )
             
-            # Create cleaner synthetic background for the crop
-            # We want the grain isolated on a blue/black background for consistent inference
-            # 1. Create a mask just for this contour in the local 64x64 region
+            # Create mask for this specific grain
             mask_local = np.zeros((region_size, region_size), dtype=np.uint8)
-            
-            # We need to shift the contour to the local coordinates of the 64x64 crop
             contour_shifted = contour - [adj_cX - half_size, adj_cY - half_size]
-            
-            # Draw the filled contour on the local mask
             cv2.drawContours(mask_local, [contour_shifted], -1, 255, thickness=cv2.FILLED)
             
-            # Create a blue background image
+            # Blue background to match training data
             background_img = np.full((region_size, region_size, 3), (255, 0, 0), dtype=np.uint8)
-            
-            # Combine: Place the masked grain onto the blue background
             composed = background_img.copy()
-            # Only copy pixels where the mask is active
             composed[mask_local == 255] = grain_region[mask_local == 255]
             
-            # Save for batch prediction
-            # Note: cv2.imwrite handles BGR→RGB conversion for PNG automatically
-            cv2.imwrite(os.path.join(grains_dir, f"{img_counter}.png"), composed)
+            # Classify the grain using ML model ONLY (no heuristic override)
+            if model is not None:
+                class_name, confidence = classify_grain(composed)
+                class_counts[class_name] += 1
+            else:
+                class_name = "unknown"
+                if "unknown" not in class_counts:
+                    class_counts["unknown"] = 0
+                class_counts["unknown"] += 1
+            
+            # Save with classification in filename
+            filename = f"{img_counter}_{class_name}.png"
+            cv2.imwrite(os.path.join(grains_dir, filename), composed)
             img_counter += 1
-
-    # Write debug log
-    with open("debug_log.txt", "w") as f:
-        f.write(f"Timestamp: {datetime.datetime.now()}\n")
-        f.write(f"Contours found: {len(contours)}\n")
-        f.write(f"Model Status: {'Loaded' if model else 'Not Loaded'}\n")
-        if model:
-            f.write("Prediction Mode: ML Model (EfficientNet)\n")
-        else:
-            f.write("Prediction Mode: FALLBACK (Model failed)\n")
+    
+    print(f"DEBUG: Valid grains after filtering: {valid_grain_count}")
+    print(f"DEBUG: Full grains classified: {sum(class_counts.values())}")
+    print(f"DEBUG: Broken grains: {broken_grain_count}")
 
     percentage_list = {
         "25%": broken_25_count,
@@ -314,8 +384,55 @@ def detect_and_count_rice_grains_ml(original_image):
         "75%": broken_75_count
     }
     
-    return visualization_copy, percentage_list, broken_grain_count
+    return visualization_copy, percentage_list, broken_grain_count, class_counts
 
+
+def process_image(input_image):
+    """
+    Main processing function: detects grains, classifies using ML model, and returns results.
+    
+    Args:
+        input_image (numpy array): Input image containing rice and potential impurities.
+        
+    Returns:
+        tuple: (visualization_image, perfect_count, chalky_count, black_count, 
+                yellow_count, brown_count, percentage_list, broken_grain_count, 
+                stone_count, husk_count)
+    """
+    if input_image is None:
+        raise ValueError("Could not read image")
+    
+    # Crop image
+    input_image = input_image[:, 10:-10]
+    cv2.imwrite('cropped_image.jpg', input_image)
+    
+    # Detect, segment, and classify grains
+    visualization_copy, percentage_list, broken_grain_count, class_counts = detect_and_count_rice_grains_ml(input_image)
+    
+    # Detect stones
+    stone = detect_stones(input_image)
+    
+    # Print grain images info
+    grains_folder = "grains"
+    if os.path.exists(grains_folder):
+        print(f"\nGrain images saved in: {os.path.abspath(grains_folder)}")
+        print(f"Total grain images: {len([f for f in os.listdir(grains_folder) if f.endswith('.png')])}")
+    
+    # Calculate total from ML classifications
+    ml_total = sum(class_counts.values())
+    
+    return (
+        visualization_copy,
+        ml_total,
+        class_counts.get("chalky", 0),
+        class_counts.get("black", 0),
+        class_counts.get("yellow", 0),
+        class_counts.get("brown", 0),
+        percentage_list,
+        broken_grain_count,
+        stone,
+        0
+    )
 
 def detect_stones(image):
     """
@@ -352,62 +469,64 @@ def detect_stones(image):
     return stone_count
 
 
-def process_image(input_image):
-    """
-    Main processing function: detects grains, classifies using ML model, and returns results.
+# def process_image(input_image):
+#     """
+#     Main processing function: detects grains, classifies using ML model, and returns results.
     
-    Args:
-        input_image (numpy array): Input image containing rice and potential impurities.
+#     Args:
+#         input_image (numpy array): Input image containing rice and potential impurities.
         
-    Returns:
-        tuple: (visualization_image, perfect_count, chalky_count, black_count, 
-                yellow_count, brown_count, percentage_list, broken_grain_count, 
-                stone_count, husk_count)
-    """
-    if input_image is None:
-        raise ValueError("Could not read image")
+#     Returns:
+#         tuple: (visualization_image, perfect_count, chalky_count, black_count, 
+#                 yellow_count, brown_count, percentage_list, broken_grain_count, 
+#                 stone_count, husk_count)
+#     """
+#     if input_image is None:
+#         raise ValueError("Could not read image")
     
-    # Crop image (adjust as needed for your setup)
-    input_image = input_image[:, 10:-10]
-    cv2.imwrite('cropped_image.jpg', input_image)
+#     # Crop image (adjust as needed for your setup)
+#     input_image = input_image[:, 10:-10]
+#     cv2.imwrite('cropped_image.jpg', input_image)
     
-    # Detect and segment grains
-    visualization_copy, percentage_list, broken_grain_count = detect_and_count_rice_grains_ml(input_image)
+#     # Detect and segment grains
+#     visualization_copy, percentage_list, broken_grain_count = detect_and_count_rice_grains_ml(input_image)
     
-    # Detect stones
-    stone = detect_stones(input_image)
+#     # Detect stones
+#     stone = detect_stones(input_image)
     
-    # Classify grains using ML model
-    grains_folder = "grains"
-    if not os.path.exists(grains_folder):
-        print(f"Warning: Folder not found: {grains_folder}")
-        class_counts = {label: 0 for label in LABEL_MAP.values()}
-    else:
-        class_counts = predict_images_from_folder(grains_folder)
-        shutil.rmtree(grains_folder)  # Clean up
+#     # Classify grains using ML model
+#     grains_folder = "grains"
+#     if not os.path.exists(grains_folder):
+#         print(f"Warning: Folder not found: {grains_folder}")
+#         class_counts = {label: 0 for label in LABEL_MAP.values()}
+#     else:
+#         class_counts = predict_images_from_folder(grains_folder)
+#         print(f"\nGrain images saved in: {os.path.abspath(grains_folder)}")
+#         print(f"Total grain images: {len([f for f in os.listdir(grains_folder) if f.endswith('.png')])}")
     
-    # Calculate total from ML classifications
-    ml_total = sum(class_counts.values())
     
-    return (
-        visualization_copy,
-        ml_total,  # full_grain_count = total classified by ML (not broken)
-        class_counts["chalky"],
-        class_counts["black"],
-        class_counts["yellow"],
-        class_counts["brown"],
-        percentage_list,
-        broken_grain_count,
-        stone,
-        0  # husk_count = 0 (model not trained on husk)
-    )
+#     # Calculate total from ML classifications
+#     ml_total = sum(class_counts.values())
+    
+#     return (
+#         visualization_copy,
+#         ml_total,  # full_grain_count = total classified by ML (not broken)
+#         class_counts["chalky"],
+#         class_counts["black"],
+#         class_counts["yellow"],
+#         class_counts["brown"],
+#         percentage_list,
+#         broken_grain_count,
+#         stone,
+#         0  # husk_count = 0 (model not trained on husk)
+#     )
 
 
 # ==================== TEST MAIN ====================
 
 if __name__ == "__main__":
     # Test the function
-    image_path = "/home/rvce/Desktop/compiled/static/captured/captured_1748464654.jpg"
+    image_path = r"E:\elsem3\new_ricefromdevice\Rice-Sorter\static\captured\captured_1749462409.jpg"
     
     image = cv2.imread(image_path)
     
