@@ -259,7 +259,9 @@ def process_image_route():
         print("Results unpacked")
 
         # Calculate total count
-        total_objects = full_grain_count + chalky_count + black_count + yellow_count + brown_count + broken_grain_count + stone_count + husk_count
+        # full_grain_count = sum of ML classes (chalky + yellow + black + brown)
+        # So total = ML classified + broken (NOT adding individual classes again!)
+        total_objects = full_grain_count + broken_grain_count
         print(f"Total objects detected: {total_objects}")
 
         # Save processed image with a timestamp-based filename
@@ -287,6 +289,73 @@ def process_image_route():
     except Exception as e:
         import traceback
         print("Error in process_image_route:")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/process_image_opencv', methods=['POST'])
+def process_image_opencv_route():
+    """
+    Processes an image using ONLY OpenCV (no ML model).
+    Uses the old process_image.py logic.
+    """
+    data = request.get_json()
+    image_path = data.get("image_path")
+
+    if not image_path:
+        return jsonify({"error": "Invalid request"}), 400
+
+    image_full_path = os.path.join(app.root_path, image_path.lstrip('/'))
+    
+    image = cv2.imread(image_full_path)
+    if image is None:
+        return jsonify({"error": "Image not found"}), 404
+
+    try:
+        print(f"Processing image with OpenCV at path: {image_full_path}")
+        from process_image import detect_and_count_rice_grains
+        processed_result = detect_and_count_rice_grains(image)
+        
+        # Unpack results (7 values from old function)
+        final_image = processed_result[0]
+        full_grain_count = processed_result[1]
+        broken_grain_count = processed_result[2]
+        chalky_count = processed_result[3]
+        black_count = processed_result[4]
+        yellow_count = processed_result[5]
+        broken_percentages = processed_result[6]
+
+        # Set defaults for values not in old version
+        stone_count = 0
+        husk_count = 0
+        brown_count = 0
+
+        total_objects = full_grain_count + chalky_count + black_count + yellow_count + brown_count + broken_grain_count
+
+        processed_filename = f"processed_opencv_{int(time.time())}.jpg"
+        processed_filepath = os.path.join(PROCESSED_FOLDER, processed_filename)
+        cv2.imwrite(processed_filepath, final_image)
+        print(f"Saved OpenCV processed image to: {processed_filepath}")
+
+        cleanup_old_images(PROCESSED_FOLDER, max_files=MAX_IMAGES)
+
+        return jsonify({
+            "processed_image_url": url_for('static', filename=f'processed/{processed_filename}'),
+            "total_objects": total_objects,
+            "full_grain_count": full_grain_count,
+            "chalky_count": chalky_count,
+            "black_count": black_count,
+            "yellow_count": yellow_count,
+            "brown_count": brown_count,
+            "broken_percentages": broken_percentages,
+            "broken_grain_count": broken_grain_count,
+            "stone_count": stone_count,
+            "husk_count": husk_count,
+            "analysis_method": "opencv"
+        })
+    except Exception as e:
+        import traceback
+        print("Error in process_image_opencv_route:")
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 

@@ -8,10 +8,11 @@ from tensorflow.keras.models import load_model
 import datetime
 
 # ==================== MODEL CONFIGURATION ====================
-# EfficientNet configuration
-IMAGE_SIZE = (224, 224)  # EfficientNet standard input size
-NUM_CLASSES = 6
-LABEL_MAP = {0: "black", 1: "brown", 2: "yellow", 3: "chalky", 4: "perfect", 5: "husk"}
+# Model configuration - MUST match training!
+# Model has 5 classes based on output shape (1, 5)
+IMAGE_SIZE = (224, 224)
+NUM_CLASSES = 5
+LABEL_MAP = {0: "black", 1: "brown", 2: "chalky", 3: "yellow", 4: "perfect"}
 
 # Model path - EfficientNet Rice Classifier
 MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'efficientnet_rice_final_inference.keras')
@@ -95,6 +96,7 @@ def classify_grain(grain_crop):
 def load_and_preprocess_image_from_path(path):
     """
     Load and preprocess an image from disk for batch prediction.
+    MUST MATCH TRAINING PREPROCESSING EXACTLY!
     
     Args:
         path (str): Path to image file
@@ -105,10 +107,10 @@ def load_and_preprocess_image_from_path(path):
     img = tf.io.read_file(path)
     img = tf.image.decode_png(img, channels=3)
     img = tf.image.resize(img, IMAGE_SIZE)
+    # CRITICAL: Training used simple float32 cast, NOT EfficientNet preprocessing!
+    # The training notebook did: grain_resized.astype(np.float32)
+    # NO normalization to [-1, 1] range!
     img = tf.cast(img, tf.float32)
-    
-    # Apply EfficientNet preprocessing
-    img = tf.keras.applications.efficientnet.preprocess_input(img)
     
     return img
 
@@ -131,6 +133,9 @@ def predict_images_from_folder(folder_path):
         print(f"Warning: No PNG images found in {folder_path}")
         return class_counts
     
+    # Debug: Print first prediction details
+    first_prediction_logged = False
+    
     for img_file in image_files:
         img_path = os.path.join(folder_path, img_file)
         img = load_and_preprocess_image_from_path(img_path)
@@ -143,7 +148,23 @@ def predict_images_from_folder(folder_path):
         predictions = model.predict(img_expanded, verbose=0)
         predicted_class = np.argmax(predictions)
         
-        class_name = LABEL_MAP[predicted_class]
+        # Debug: Log first prediction details
+        if not first_prediction_logged:
+            print(f"DEBUG: Model output shape: {predictions.shape}")
+            print(f"DEBUG: First prediction raw output: {predictions[0]}")
+            print(f"DEBUG: Predicted class index: {predicted_class}")
+            print(f"DEBUG: Available LABEL_MAP keys: {list(LABEL_MAP.keys())}")
+            first_prediction_logged = True
+        
+        # Handle unknown class indices gracefully
+        if predicted_class in LABEL_MAP:
+            class_name = LABEL_MAP[predicted_class]
+        else:
+            print(f"WARNING: Unknown class index {predicted_class}, mapping to 'unknown'")
+            class_name = "unknown"
+            if "unknown" not in class_counts:
+                class_counts["unknown"] = 0
+        
         class_counts[class_name] += 1
     
     return class_counts
@@ -234,6 +255,8 @@ def detect_and_count_rice_grains_ml(original_image):
                 broken_75_count += 1
             # Mark broken in Red
             cv2.drawContours(visualization_copy, [contour], -1, (0, 0, 255), 2)
+            # Skip ML classification for broken grains (model wasn't trained on broken fragments)
+            continue
         
         # --- 3. Extract Grain for ML Classification ---
         M = cv2.moments(contour)
@@ -271,6 +294,7 @@ def detect_and_count_rice_grains_ml(original_image):
             composed[mask_local == 255] = grain_region[mask_local == 255]
             
             # Save for batch prediction
+            # Note: cv2.imwrite handles BGR→RGB conversion for PNG automatically
             cv2.imwrite(os.path.join(grains_dir, f"{img_counter}.png"), composed)
             img_counter += 1
 
@@ -362,9 +386,12 @@ def process_image(input_image):
         class_counts = predict_images_from_folder(grains_folder)
         shutil.rmtree(grains_folder)  # Clean up
     
+    # Calculate total from ML classifications
+    ml_total = sum(class_counts.values())
+    
     return (
         visualization_copy,
-        class_counts["perfect"],
+        ml_total,  # full_grain_count = total classified by ML (not broken)
         class_counts["chalky"],
         class_counts["black"],
         class_counts["yellow"],
@@ -372,7 +399,7 @@ def process_image(input_image):
         percentage_list,
         broken_grain_count,
         stone,
-        class_counts["husk"]
+        0  # husk_count = 0 (model not trained on husk)
     )
 
 

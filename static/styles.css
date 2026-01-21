@@ -255,6 +255,74 @@ h2 {
   display: flex;
   z-index: 100;
   flex-direction: row;
-  gap: 10px; /* spacing between buttons */
-  padding: 10px; /* optional: some space inside the container */
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+  max-width: 100%;
+}
+
+/* Results Table Styles */
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 10px;
+  font-size: 0.75rem;
+}
+
+.results-table th,
+.results-table td {
+  padding: 6px 8px;
+  text-align: left;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.results-table th {
+  background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+  color: white;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.results-table th:last-child,
+.results-table td:last-child {
+  text-align: right;
+}
+
+.results-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.results-table .total-row {
+  background-color: #e7f1ff;
+  font-weight: 600;
+}
+
+.results-table .total-row td {
+  border-bottom: 2px solid var(--primary-color);
+}
+
+/* Method Badge */
+.method-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: 12px;
+  background: linear-gradient(to right, #4cc9f0, #4361ee);
+  color: white;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* Button Style Improvements */
+.btn-outline-success {
+  border: 2px solid #28a745;
+  color: #28a745;
+  background: transparent;
+}
+
+.btn-outline-success:hover {
+  background: #28a745;
+  color: white;
 }
