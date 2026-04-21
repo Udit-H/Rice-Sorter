@@ -1,0 +1,20 @@
+# Videos
+Videos/
+videos/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wmv
+
+# Images
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.tiff
+*.tif
+*.gif
+*.webp
+
+dbg_test_4_100.mp4.jpg

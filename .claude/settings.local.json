@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python count_rice_grains_video/run_tests.py)"
+    ]
+  }
+}
