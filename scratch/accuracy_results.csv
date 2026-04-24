@@ -1,13 +1,13 @@
 video,gt,detected,accuracy_pct,error_pct,status
-test_9_white_100.mp4,100,106,106.0,6.0,✅ OK
-test_10_chalky_100.mp4,100,103,103.0,3.0,✅ OK
-test_11_brown_100.mp4,100,120,120.0,20.0,❌ +20
-test_12_black_41.mp4,41,30,73.2,26.8,❌ -11
-test_14_yellow_100.mp4,100,112,112.0,12.0,❌ +12
-test_15_brown_200.mp4,200,310,155.0,55.0,❌ +110
-test_16_chalky_200.mp4,200,191,95.5,4.5,✅ OK
-test_17_yellow_200.mp4,200,188,94.0,6.0,✅ OK
+test_9_white_100.mp4,100,94,94.0,6.0,✅ OK
+test_10_chalky_100.mp4,100,98,98.0,2.0,✅ OK
+test_11_brown_100.mp4,100,98,98.0,2.0,✅ OK
+test_12_black_41.mp4,41,31,75.6,24.4,❌ -10
+test_14_yellow_100.mp4,100,100,100.0,0.0,✅ OK
+test_15_brown_200.mp4,200,224,112.0,12.0,❌ +24
+test_16_chalky_200.mp4,200,187,93.5,6.5,✅ OK
+test_17_yellow_200.mp4,200,174,87.0,13.0,❌ -26
 test_18_white_200.mp4,200,207,103.5,3.5,✅ OK
-test_19_broken_200.mp4,200,141,70.5,29.5,❌ -59
-test_13_mixed.mp4,168,163,97.0,3.0,✅ OK
-test_20_mixed_500.mp4,500,505,101.0,1.0,✅ OK
+test_19_broken_200.mp4,200,178,89.0,11.0,❌ -22
+test_13_mixed.mp4,168,154,91.7,8.3,✅ OK
+test_20_mixed_500.mp4,500,514,102.8,2.8,✅ OK

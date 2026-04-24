@@ -75,10 +75,8 @@ def _make_mask(frame: np.ndarray, mode: str, edge_margin: int = 30) -> np.ndarra
         valid_v = cv2.inRange(hsv, (0, 0, 20), (180, 255, 255))
         m = cv2.bitwise_and(fg, valid_v)
 
-        # 5. Exclude edge zones where belt frame / reflections cause false positives
-        if edge_margin > 0:
-            m[:edge_margin, :] = 0
-            m[h - edge_margin:, :] = 0
+        # 5. Edge exclusion moved to contour-level filtering in detect_grains()
+        #    This is more precise than blanket pixel exclusion.
 
     elif mode == "dark":
         m = cv2.inRange(hsv, (0, 0, 10), (180, 255, 75))
@@ -105,17 +103,22 @@ def detect_grains(
     max_area: int = 20000,
     max_aspect_small: float = 6.0,
     small_threshold: int = 150,
+    border_margin: int = 2,
 ) -> Tuple[list, np.ndarray]:
     """Detect grain contours in the frame.
 
-    Applies shape filtering to small contours: anything below `small_threshold`
-    area with aspect ratio > `max_aspect_small` is rejected as noise (motion
-    blur streaks or belt edge artefacts). This keeps real broken/black grains
-    (aspect ~2-3) while removing noise (aspect ~8+).
+    Filtering applied:
+    1. Area filter: rejects contours outside [min_area, max_area].
+    2. Shape filter: rejects small contours (<small_threshold area) with
+       aspect ratio > max_aspect_small (noise streaks from motion blur).
+    3. Border filter: rejects contours whose bounding box touches the frame
+       edge (within border_margin px). Belt structure artifacts always touch
+       the frame border; real grains near the edge do not.
 
     Returns (valid_contours, binary_mask).
     """
     mask = _make_mask(frame, mode)
+    h_frame, w_frame = frame.shape[:2]
     contours, _ = cv2.findContours(
         mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
@@ -124,9 +127,16 @@ def detect_grains(
         area = cv2.contourArea(c)
         if area <= min_area or area >= max_area:
             continue
+        x, y, w, h = cv2.boundingRect(c)
+        # Border filter: reject contours touching LEFT or RIGHT frame edge.
+        # Belt structure/frame artifacts sit at the left/right borders.
+        # We do NOT filter top/bottom edges because grains enter/exit there.
+        if border_margin > 0:
+            if (x <= border_margin or
+                    x + w >= w_frame - border_margin):
+                continue
         # Shape filter: reject high-aspect-ratio small blobs (noise streaks)
         if area < small_threshold:
-            x, y, w, h = cv2.boundingRect(c)
             aspect = max(w, h) / (min(w, h) + 1e-5)
             if aspect > max_aspect_small:
                 continue
@@ -402,7 +412,7 @@ def process_video(
         if not ok:
             break
 
-        contours, mask = detect_grains(frame, mode, min_area=40)
+        contours, mask = detect_grains(frame, mode, min_area=40, max_area=5000)
         cens = centroids_of(contours)
 
         # Spike guard: skip frames with anomalous detection counts

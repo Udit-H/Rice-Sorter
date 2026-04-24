@@ -17,4 +17,48 @@ videos/
 *.gif
 *.webp
 
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+
+# Virtual environments
+venv/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs
+*.log
+
+# Local datasets / large assets
+rice_videos/
+New_Dataset_rice_sorter/
+
+# Local notebooks / scratch work
+Code/
+
+# Generated outputs
+output_test_*/
+scratch/output_*/
+scratch/all_results.json
+
+# OS/editor
+.DS_Store
+.vscode/
+
+# Generated datasets (from video extraction)
+extracted_grains/
+
+# Training artifacts
+rice_model.pth
+training_plot.png
+val_predictions.csv
+mixed_predictions.csv
+
 dbg_test_4_100.mp4.jpg
+
+# Temp/backup files
+.gitignore.local

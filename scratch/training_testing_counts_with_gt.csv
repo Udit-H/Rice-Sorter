@@ -1,0 +1,13 @@
+split,video,path,gt,count,acc_pct
+training,test_10_chalky_100.mp4,training_vids/test_10_chalky_100.mp4,100,94,94.00
+training,test_11_brown_100.mp4,training_vids/test_11_brown_100.mp4,100,108,108.00
+training,test_12_black_41.mp4,training_vids/test_12_black_41.mp4,41,40,97.56
+training,test_14_yellow_100.mp4,training_vids/test_14_yellow_100.mp4,100,89,89.00
+training,test_15_brown_200.mp4,training_vids/test_15_brown_200.mp4,200,475,237.50
+training,test_16_chalky_200.mp4,training_vids/test_16_chalky_200.mp4,200,130,65.00
+training,test_17_yellow_200.mp4,training_vids/test_17_yellow_200.mp4,200,143,71.50
+training,test_18_white_200.mp4,training_vids/test_18_white_200.mp4,200,151,75.50
+training,test_19_broken_200.mp4,training_vids/test_19_broken_200.mp4,200,157,78.50
+training,test_9_white_100.mp4,training_vids/test_9_white_100.mp4,100,89,89.00
+testing,test_13_mixed.mp4,test_vids/test_13_mixed.mp4,,147,
+testing,test_20_mixed_500.mp4,test_vids/test_20_mixed_500.mp4,500,368,73.60

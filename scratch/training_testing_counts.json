@@ -1,0 +1,74 @@
+[
+  {
+    "split": "training",
+    "video": "test_10_chalky_100.mp4",
+    "path": "training_vids/test_10_chalky_100.mp4",
+    "count": 94
+  },
+  {
+    "split": "training",
+    "video": "test_11_brown_100.mp4",
+    "path": "training_vids/test_11_brown_100.mp4",
+    "count": 108
+  },
+  {
+    "split": "training",
+    "video": "test_12_black_41.mp4",
+    "path": "training_vids/test_12_black_41.mp4",
+    "count": 40
+  },
+  {
+    "split": "training",
+    "video": "test_14_yellow_100.mp4",
+    "path": "training_vids/test_14_yellow_100.mp4",
+    "count": 89
+  },
+  {
+    "split": "training",
+    "video": "test_15_brown_200.mp4",
+    "path": "training_vids/test_15_brown_200.mp4",
+    "count": 475
+  },
+  {
+    "split": "training",
+    "video": "test_16_chalky_200.mp4",
+    "path": "training_vids/test_16_chalky_200.mp4",
+    "count": 130
+  },
+  {
+    "split": "training",
+    "video": "test_17_yellow_200.mp4",
+    "path": "training_vids/test_17_yellow_200.mp4",
+    "count": 143
+  },
+  {
+    "split": "training",
+    "video": "test_18_white_200.mp4",
+    "path": "training_vids/test_18_white_200.mp4",
+    "count": 151
+  },
+  {
+    "split": "training",
+    "video": "test_19_broken_200.mp4",
+    "path": "training_vids/test_19_broken_200.mp4",
+    "count": 157
+  },
+  {
+    "split": "training",
+    "video": "test_9_white_100.mp4",
+    "path": "training_vids/test_9_white_100.mp4",
+    "count": 89
+  },
+  {
+    "split": "testing",
+    "video": "test_13_mixed.mp4",
+    "path": "test_vids/test_13_mixed.mp4",
+    "count": 147
+  },
+  {
+    "split": "testing",
+    "video": "test_20_mixed_500.mp4",
+    "path": "test_vids/test_20_mixed_500.mp4",
+    "count": 368
+  }
+]
