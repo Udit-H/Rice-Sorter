@@ -2,7 +2,8 @@
 """Batch-test rice grain counting on all training + testing videos.
 
 Runs count_grains_updated.process_video() on every video, compares against
-ground-truth counts parsed from filenames, and prints an accuracy table.
+ground-truth counts parsed from filenames, and prints an accuracy table
+with broken/whole grain breakdown.
 
 Usage:
     python batch_test_all.py
@@ -52,14 +53,15 @@ def main():
     args = ap.parse_args()
 
     results = []
-    header = f"{'Video':<40} {'GT':>4} {'Det':>4} {'Acc%':>7} {'Status'}"
-    sep = "-" * 68
+    header = (f"{'Video':<35} {'GT':>4} {'Tot':>4} {'Whl':>4} {'Brk':>4} "
+              f"{'Acc%':>7} {'Status'}")
+    sep = "-" * 80
 
     for rel_path, gt in VIDEOS:
         abs_path = os.path.join(ROOT, rel_path)
         if not os.path.exists(abs_path):
             print(f"  [SKIP] {rel_path} not found")
-            results.append((rel_path, gt, -1, "MISSING"))
+            results.append((rel_path, gt, -1, 0, 0, "MISSING"))
             continue
 
         print(f"\nProcessing: {rel_path}")
@@ -71,7 +73,7 @@ def main():
             basename = os.path.splitext(os.path.basename(rel_path))[0]
             out_path = os.path.join(out_dir, f"{basename}_annotated.mp4")
 
-        det = process_video(
+        res = process_video(
             abs_path,
             rice_mode="auto",
             out_path=out_path,
@@ -82,26 +84,29 @@ def main():
             spike_guard=not args.no_spike_guard,
         )
 
-        acc = det / gt * 100 if gt > 0 else 0.0
-        err = abs(det - gt) / gt * 100
+        det = res["total"]
+        whole = res["whole"]
+        broken = res["broken"]
+        err = abs(det - gt) / gt * 100 if gt > 0 else 0
         status = "✅ OK" if err <= 10 else f"❌ {'+' if det > gt else ''}{det - gt}"
-        results.append((rel_path, gt, det, status))
+        results.append((rel_path, gt, det, whole, broken, status))
 
     # Print summary table
     print(f"\n{sep}")
     print(header)
     print(sep)
-    for rel_path, gt, det, status in results:
+    for rel_path, gt, det, whole, broken, status in results:
         name = os.path.basename(rel_path)
         if det < 0:
-            print(f"{name:<40} {gt:>4} {'?':>4} {'---':>7} {status}")
+            print(f"{name:<35} {gt:>4} {'?':>4} {'?':>4} {'?':>4} {'---':>7} {status}")
         else:
             acc = det / gt * 100 if gt > 0 else 0.0
-            print(f"{name:<40} {gt:>4} {det:>4} {acc:>6.1f}% {status}")
+            print(f"{name:<35} {gt:>4} {det:>4} {whole:>4} {broken:>4} "
+                  f"{acc:>6.1f}% {status}")
     print(sep)
 
     # Summary stats
-    valid = [(gt, det) for _, gt, det, _ in results if det >= 0]
+    valid = [(gt, det) for _, gt, det, _, _, _ in results if det >= 0]
     if valid:
         errors = [abs(d - g) / g * 100 for g, d in valid]
         print(f"\nMean absolute error : {sum(errors)/len(errors):.1f}%")
@@ -117,12 +122,13 @@ def main():
     os.makedirs(os.path.dirname(csv_path), exist_ok=True)
     with open(csv_path, "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["video", "gt", "detected", "accuracy_pct", "error_pct", "status"])
-        for rel_path, gt, det, status in results:
+        w.writerow(["video", "gt", "detected", "whole", "broken",
+                     "accuracy_pct", "error_pct", "status"])
+        for rel_path, gt, det, whole, broken, status in results:
             if det >= 0:
                 acc = det / gt * 100 if gt > 0 else 0
                 err = abs(det - gt) / gt * 100
-                w.writerow([os.path.basename(rel_path), gt, det,
+                w.writerow([os.path.basename(rel_path), gt, det, whole, broken,
                             f"{acc:.1f}", f"{err:.1f}", status])
     print(f"\nCSV saved: {csv_path}")
 

@@ -128,12 +128,13 @@ def detect_grains(
         if area <= min_area or area >= max_area:
             continue
         x, y, w, h = cv2.boundingRect(c)
-        # Border filter: reject contours touching LEFT or RIGHT frame edge.
-        # Belt structure/frame artifacts sit at the left/right borders.
-        # We do NOT filter top/bottom edges because grains enter/exit there.
+        # Border filter: reject contours whose bounding box touches the
+        # frame edge.  Belt structure / conveyor frame artifacts always
+        # touch the border; real grains in the interior do not.
         if border_margin > 0:
-            if (x <= border_margin or
-                    x + w >= w_frame - border_margin):
+            if (x <= border_margin or y <= border_margin or
+                    x + w >= w_frame - border_margin or
+                    y + h >= h_frame - border_margin):
                 continue
         # Shape filter: reject high-aspect-ratio small blobs (noise streaks)
         if area < small_threshold:
@@ -231,11 +232,16 @@ class UniqueGrainTracker:
       conflicts in dense frames.
     """
 
+    # Area threshold for broken vs whole grain classification.
+    # Based on analysis: broken grains median ~150px², whole grains median ~580-972px².
+    BROKEN_AREA_THRESHOLD = 300
+
     def __init__(self, max_dist: int = 45, max_missed: int = 3):
         self.max_dist   = max_dist
         self.max_missed = max_missed
-        self._tracks: dict = {}   # id → {"centroid": (x,y), "missed": int}
+        self._tracks: dict = {}   # id → {"centroid": (x,y), "missed": int, "area": float}
         self._nid = 0             # total unique grains ever assigned
+        self._grain_areas: dict = {}  # id → area (stored permanently for classification)
 
     def _match_hungarian(self, dets: list):
         """Globally optimal matching via the Hungarian algorithm."""
@@ -290,14 +296,27 @@ class UniqueGrainTracker:
             matched_d.add(di)
         return matched_t, matched_d
 
-    def update(self, centroids: list) -> int:
-        """Update tracker with new frame detections. Returns current unique count."""
+    def update(self, centroids: list, areas: Optional[list] = None) -> int:
+        """Update tracker with new frame detections.
+
+        Parameters
+        ----------
+        centroids : list of (cx, cy) tuples
+        areas     : optional list of contour areas, same length as centroids.
+                    Used for broken/whole grain classification.
+
+        Returns current unique count.
+        """
         matched_t, matched_d = self._match_hungarian(centroids)
 
         # Update matched tracks
         for tid, di in matched_t.items():
             self._tracks[tid]["centroid"] = centroids[di]
             self._tracks[tid]["missed"]   = 0
+            # Update area with max seen (grain may be partially visible initially)
+            if areas and di < len(areas):
+                prev = self._grain_areas.get(tid, 0)
+                self._grain_areas[tid] = max(prev, areas[di])
 
         # Penalise unmatched existing tracks
         for tid in list(self._tracks):
@@ -307,7 +326,9 @@ class UniqueGrainTracker:
         # Register new tracks — each one is a new unique grain
         for di, c in enumerate(centroids):
             if di not in matched_d:
+                a = areas[di] if areas and di < len(areas) else 0
                 self._tracks[self._nid] = {"centroid": c, "missed": 0}
+                self._grain_areas[self._nid] = a
                 self._nid += 1
 
         # Prune dead tracks
@@ -316,6 +337,14 @@ class UniqueGrainTracker:
             if v["missed"] <= self.max_missed
         }
         return self._nid
+
+    def get_classification(self) -> dict:
+        """Return grain count breakdown: total, whole, broken."""
+        total = self._nid
+        broken = sum(1 for a in self._grain_areas.values()
+                     if a < self.BROKEN_AREA_THRESHOLD)
+        whole = total - broken
+        return {"total": total, "whole": whole, "broken": broken}
 
 
 # ── Spike guard ───────────────────────────────────────────────────────────────
@@ -363,9 +392,16 @@ def process_video(
     max_missed: Optional[int] = None,
     edge_margin: int = 30,
     spike_guard: bool = True,
-) -> int:
+) -> dict:
     """
-    Count rice grains in *video_path* and return the integer count.
+    Count rice grains in *video_path*.
+
+    Returns
+    -------
+    dict with keys:
+        total  : int — total unique grains counted
+        whole  : int — grains classified as whole (area >= 300px²)
+        broken : int — grains classified as broken (area < 300px²)
 
     Parameters
     ----------
@@ -381,7 +417,7 @@ def process_video(
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         print(f"  [ERROR] Cannot open {video_path}")
-        return -1
+        return {"total": -1, "whole": 0, "broken": 0}
 
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     W   = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -392,7 +428,7 @@ def process_video(
     mode = rice_mode
 
     # Compute max_missed from FPS if not specified.
-    # At 60fps, grains are visible for 2-3 frames. Keep ghosts for ~3 frames max.
+    # At 60fps, grains are visible for 2-3 frames. Keep ghosts for ~4 frames max.
     if max_missed is None:
         max_missed = max(3, int(fps * 0.07))
 
@@ -414,34 +450,40 @@ def process_video(
 
         contours, mask = detect_grains(frame, mode, min_area=40, max_area=5000)
         cens = centroids_of(contours)
+        # Collect contour areas for broken/whole classification
+        grain_areas = [cv2.contourArea(c) for c in contours]
 
         # Spike guard: skip frames with anomalous detection counts
         if guard and guard.is_spike(len(cens)):
             spike_count += 1
             if writer:
-                # Still write frame but without updating tracker
                 vis = frame.copy()
+                cls = tracker.get_classification()
                 cv2.putText(
-                    vis, f"Count: {tracker._nid}  [{mode}] SPIKE SKIPPED",
-                    (10, 42), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2,
+                    vis, f"Total:{cls['total']} Whole:{cls['whole']} Broken:{cls['broken']}  SPIKE",
+                    (10, 42), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2,
                 )
                 writer.write(vis)
             frame_idx += 1
             continue
 
-        cnt = tracker.update(cens)
+        cnt = tracker.update(cens, areas=grain_areas)
 
         if writer:
             vis = frame.copy()
             for c in contours:
                 x, y, w, h = cv2.boundingRect(c)
-                cv2.rectangle(vis, (x, y), (x + w, y + h), (0, 220, 0), 1)
+                area = cv2.contourArea(c)
+                # Green for whole, red for broken
+                color = (0, 220, 0) if area >= UniqueGrainTracker.BROKEN_AREA_THRESHOLD else (0, 80, 255)
+                cv2.rectangle(vis, (x, y), (x + w, y + h), color, 1)
             for t in tracker._tracks.values():
                 cx, cy = t["centroid"]
                 cv2.circle(vis, (cx, cy), 5, (0, 220, 255), -1)
+            cls = tracker.get_classification()
             cv2.putText(
-                vis, f"Count: {cnt}  [{mode}]",
-                (10, 42), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 255), 3,
+                vis, f"Total:{cls['total']} Whole:{cls['whole']} Broken:{cls['broken']}  [{mode}]",
+                (10, 42), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2,
             )
             writer.write(vis)
 
@@ -451,12 +493,15 @@ def process_video(
     if writer:
         writer.release()
 
+    result = tracker.get_classification()
+
     if verbose:
         extra = f"  spikes_skipped={spike_count}" if spike_count else ""
-        print(f"  mode={mode}  unique_grains={tracker._nid}  "
+        print(f"  mode={mode}  total={result['total']}  "
+              f"whole={result['whole']}  broken={result['broken']}  "
               f"frames={frame_idx}  max_missed={max_missed}  "
               f"max_dist={max_dist}{extra}")
-    return tracker._nid
+    return result
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
@@ -479,7 +524,7 @@ def _cli():
                     help="Disable per-frame spike detection")
     args = ap.parse_args()
 
-    count = process_video(
+    result = process_video(
         args.video,
         rice_mode=args.mode,
         out_path=args.out,
@@ -488,7 +533,8 @@ def _cli():
         edge_margin=args.edge_margin,
         spike_guard=not args.no_spike_guard,
     )
-    print(f"\nFinal count: {count}")
+    print(f"\nFinal count: {result['total']}  (whole: {result['whole']}, broken: {result['broken']})")
+    return result
 
 
 if __name__ == "__main__":
