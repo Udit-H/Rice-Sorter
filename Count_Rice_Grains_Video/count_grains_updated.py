@@ -5,7 +5,15 @@ Rice grain counter — centroid tracking, unique-ID counting.
 Each grain is assigned an ID the first time it is detected.
 The final count is the total number of unique IDs ever assigned,
 so a grain visible across N frames is counted exactly once.
-This fixes the original frame-summation bug.
+
+v3 — Tuned for 60fps fast conveyor where grains are visible for 2-3 frames.
+Key improvements over v2:
+  - Refined belt mask with edge exclusion zone
+  - Per-frame spike guard to reject lighting artifacts
+  - Hungarian-algorithm tracker (globally optimal matching)
+  - Aggressive max_missed (~3 frames) so ghost tracks don't absorb new grains
+  - Dynamic split_area based on median grain size
+  - Lower min_area for broken grain support
 """
 
 import cv2
@@ -14,6 +22,14 @@ import os
 import sys
 import argparse
 from typing import Optional, List, Tuple
+from collections import deque
+
+# Try to import scipy for Hungarian algorithm; fall back to greedy if unavailable
+try:
+    from scipy.optimize import linear_sum_assignment
+    _HAS_SCIPY = True
+except ImportError:
+    _HAS_SCIPY = False
 
 
 # ── Colour detection ──────────────────────────────────────────────────────────
@@ -30,27 +46,51 @@ def _auto_mode(frame: np.ndarray) -> str:
     return "white"
 
 
-def _make_mask(frame: np.ndarray, mode: str) -> np.ndarray:
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+def _make_mask(frame: np.ndarray, mode: str, edge_margin: int = 30) -> np.ndarray:
+    """Build a binary mask of grain pixels.
 
-    if mode in ["auto", "mixed", "universal"]:
-        # 1. Isolate the blue conveyor belt (H ≈ 90-140)
-        bg_belt = cv2.inRange(hsv, (90, 50, 40), (140, 255, 255))
-        
-        # 2. Isolate shadows on the belt (Same hue, lower value)
-        bg_shadow = cv2.inRange(hsv, (90, 40, 10), (140, 255, 80))
-        
-        # 3. Everything else is foreground (grains of any color)
+    Parameters
+    ----------
+    frame : BGR image
+    mode  : "auto"/"mixed"/"universal" uses belt-background subtraction;
+            "dark"/"brown"/"white" use legacy colour ranges.
+    edge_margin : pixels to exclude at top/bottom edges to avoid belt-edge
+                  reflections and conveyor frame false positives.
+    """
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    h, w = frame.shape[:2]
+
+    if mode in ("auto", "mixed", "universal"):
+        # 1. Isolate the blue conveyor belt (expanded range to catch edge reflections)
+        bg_belt = cv2.inRange(hsv, (85, 40, 30), (145, 255, 255))
+
+        # 2. Isolate shadows on the belt
+        bg_shadow = cv2.inRange(hsv, (85, 30, 5), (145, 255, 80))
+
+        # 3. Everything else is foreground (grains of any colour)
         bg_combined = cv2.bitwise_or(bg_belt, bg_shadow)
         fg = cv2.bitwise_not(bg_combined)
-        
-        # 4. Filter out pure black camera noise
-        valid_v = cv2.inRange(hsv, (0, 0, 15), (180, 255, 255))
+
+        # 4. Filter out pure black camera noise / very dark pixels
+        valid_v = cv2.inRange(hsv, (0, 0, 20), (180, 255, 255))
         m = cv2.bitwise_and(fg, valid_v)
 
-    # ... (Keep original "dark", "brown", "white" logic here if needed for legacy overrides)
-    
-    # Morphological Cleanup (unchanged)
+        # 5. Exclude edge zones where belt frame / reflections cause false positives
+        if edge_margin > 0:
+            m[:edge_margin, :] = 0
+            m[h - edge_margin:, :] = 0
+
+    elif mode == "dark":
+        m = cv2.inRange(hsv, (0, 0, 10), (180, 255, 75))
+    elif mode == "brown":
+        m = cv2.inRange(hsv, (5, 20, 60), (30, 210, 210))
+    else:  # white / chalky
+        m  = cv2.inRange(hsv, (0, 0, 100), (180, 90, 255))
+        m |= cv2.inRange(hsv, (0, 0, 75), (180, 55, 200))
+        belt = cv2.inRange(hsv, (90, 70, 40), (135, 255, 255))
+        m = cv2.bitwise_and(m, cv2.bitwise_not(belt))
+
+    # Morphological cleanup
     k3 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     k5 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
     m = cv2.morphologyEx(m, cv2.MORPH_OPEN, k3, iterations=1)
@@ -61,21 +101,51 @@ def _make_mask(frame: np.ndarray, mode: str) -> np.ndarray:
 def detect_grains(
     frame: np.ndarray,
     mode: str,
-    min_area: int = 55,
+    min_area: int = 40,
     max_area: int = 20000,
+    max_aspect_small: float = 6.0,
+    small_threshold: int = 150,
 ) -> Tuple[list, np.ndarray]:
+    """Detect grain contours in the frame.
+
+    Applies shape filtering to small contours: anything below `small_threshold`
+    area with aspect ratio > `max_aspect_small` is rejected as noise (motion
+    blur streaks or belt edge artefacts). This keeps real broken/black grains
+    (aspect ~2-3) while removing noise (aspect ~8+).
+
+    Returns (valid_contours, binary_mask).
+    """
     mask = _make_mask(frame, mode)
     contours, _ = cv2.findContours(
         mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
-    valid = [c for c in contours if min_area < cv2.contourArea(c) < max_area]
+    valid = []
+    for c in contours:
+        area = cv2.contourArea(c)
+        if area <= min_area or area >= max_area:
+            continue
+        # Shape filter: reject high-aspect-ratio small blobs (noise streaks)
+        if area < small_threshold:
+            x, y, w, h = cv2.boundingRect(c)
+            aspect = max(w, h) / (min(w, h) + 1e-5)
+            if aspect > max_aspect_small:
+                continue
+        valid.append(c)
     return valid, mask
 
 
-def _split_blob(contour, typical_area: int = 600) -> List[Tuple[int, int]]:
-    """Return N centroids for a large blob via distance-transform peak finding."""
+def _split_blob(contour, typical_area: int = 600, max_splits: int = 5) -> List[Tuple[int, int]]:
+    """Return N centroids for a large blob via distance-transform peak finding.
+
+    Parameters
+    ----------
+    max_splits : hard cap on the number of centroids produced per blob.
+                 Prevents a single large contour (e.g. belt reflection)
+                 from generating dozens of phantom centroids.
+    """
     area = cv2.contourArea(contour)
     n = max(1, round(area / typical_area))
+    n = min(n, max_splits)  # hard cap
     if n == 1:
         M = cv2.moments(contour)
         if M["m00"] > 0:
@@ -101,14 +171,31 @@ def centroids_of(
     split_area: int = 1400,
     default_typical_area: int = 750,
 ) -> List[Tuple[int, int]]:
+    """Extract one centroid per grain, splitting large clusters.
+
+    Parameters
+    ----------
+    contours : list of contours from detect_grains
+    split_area : contours larger than this are treated as clusters
+    default_typical_area : fallback single-grain area for splitting
+    """
     pts = []
-    
+
     # Dynamically calculate the median area of single, unclustered grains
-    single_areas = [cv2.contourArea(c) for c in contours if 100 < cv2.contourArea(c) < split_area]
-    typical_grain_area = int(np.median(single_areas)) if single_areas else default_typical_area
+    single_areas = [
+        cv2.contourArea(c) for c in contours
+        if 60 < cv2.contourArea(c) < split_area
+    ]
+    typical_grain_area = (
+        int(np.median(single_areas)) if single_areas else default_typical_area
+    )
+
+    # Dynamically adjust split_area based on typical grain size
+    # A cluster should be at least ~2.5× the typical grain
+    effective_split = max(split_area, int(typical_grain_area * 2.5))
 
     for c in contours:
-        if cv2.contourArea(c) > split_area:
+        if cv2.contourArea(c) > effective_split:
             pts.extend(_split_blob(c, typical_grain_area))
         else:
             M = cv2.moments(c)
@@ -120,62 +207,139 @@ def centroids_of(
 # ── Tracker ───────────────────────────────────────────────────────────────────
 
 class UniqueGrainTracker:
-    """
-    Track grain centroids across frames.
-    A grain is counted once it has been consistently detected for at
-    least `min_age` frames — this filters single-frame noise blobs.
+    """Track grain centroids across frames.
+
+    Tuned for fast conveyors at 60fps where each grain is visible for only
+    2-3 frames.  Key design decisions:
+
+    - **max_dist = 45 px**: at 60fps a grain moves ~20-35 px/frame; 45 px
+      prevents matching adjacent grains while accommodating movement.
+    - **max_missed = 3 frames**: a grain that vanishes for 3+ frames is gone.
+      Keeping ghost tracks alive longer would cause new grains in similar
+      positions to be absorbed → undercounting.
+    - **Hungarian matching**: globally optimal assignment avoids greedy
+      conflicts in dense frames.
     """
 
-    def __init__(self, max_dist: int = 70, max_missed: int = 30):
+    def __init__(self, max_dist: int = 45, max_missed: int = 3):
         self.max_dist   = max_dist
         self.max_missed = max_missed
-        self._tracks: dict = {}  # id → {centroid, missed}
-        self._nid = 0           # total unique grains ever assigned
+        self._tracks: dict = {}   # id → {"centroid": (x,y), "missed": int}
+        self._nid = 0             # total unique grains ever assigned
 
-    # -- greedy nearest-neighbour match ---------------------------------------
-    def _match(self, dets: list):
+    def _match_hungarian(self, dets: list):
+        """Globally optimal matching via the Hungarian algorithm."""
+        if not self._tracks or not dets:
+            return {}, set()
+
+        track_ids = list(self._tracks.keys())
+        n_tracks = len(track_ids)
+        n_dets   = len(dets)
+
+        # Build cost matrix
+        cost = np.full((n_tracks, n_dets), 1e9, dtype=np.float64)
+        for ti, tid in enumerate(track_ids):
+            tx, ty = self._tracks[tid]["centroid"]
+            for di, (cx, cy) in enumerate(dets):
+                d = ((cx - tx) ** 2 + (cy - ty) ** 2) ** 0.5
+                if d <= self.max_dist:
+                    cost[ti, di] = d
+
+        if _HAS_SCIPY:
+            row_ind, col_ind = linear_sum_assignment(cost)
+        else:
+            # Fallback: greedy matching sorted by distance
+            return self._match_greedy(dets)
+
         matched_t: dict = {}
         matched_d: set  = set()
+        for ti, di in zip(row_ind, col_ind):
+            if cost[ti, di] < 1e8:   # only valid assignments
+                matched_t[track_ids[ti]] = di
+                matched_d.add(di)
+
+        return matched_t, matched_d
+
+    def _match_greedy(self, dets: list):
+        """Fallback greedy nearest-neighbour matching."""
+        matched_t: dict = {}
+        matched_d: set  = set()
+        # Sort tracks by distance to their nearest detection for better ordering
+        pairs = []
         for tid, t in self._tracks.items():
-            tx, ty  = t["centroid"]
-            best_di = None
-            best_d  = self.max_dist
+            tx, ty = t["centroid"]
             for di, (cx, cy) in enumerate(dets):
-                if di in matched_d:
-                    continue
                 d = ((cx - tx) ** 2 + (cy - ty) ** 2) ** 0.5
-                if d < best_d:
-                    best_d, best_di = d, di
-            if best_di is not None:
-                matched_t[tid] = best_di
-                matched_d.add(best_di)
+                if d <= self.max_dist:
+                    pairs.append((d, tid, di))
+        pairs.sort()
+        for d, tid, di in pairs:
+            if tid in matched_t or di in matched_d:
+                continue
+            matched_t[tid] = di
+            matched_d.add(di)
         return matched_t, matched_d
 
     def update(self, centroids: list) -> int:
-        matched_t, matched_d = self._match(centroids)
+        """Update tracker with new frame detections. Returns current unique count."""
+        matched_t, matched_d = self._match_hungarian(centroids)
 
-        # update matched tracks
+        # Update matched tracks
         for tid, di in matched_t.items():
             self._tracks[tid]["centroid"] = centroids[di]
             self._tracks[tid]["missed"]   = 0
 
-        # penalise unmatched existing tracks
+        # Penalise unmatched existing tracks
         for tid in list(self._tracks):
             if tid not in matched_t:
                 self._tracks[tid]["missed"] += 1
 
-        # register new tracks — each one is a new unique grain
+        # Register new tracks — each one is a new unique grain
         for di, c in enumerate(centroids):
             if di not in matched_d:
                 self._tracks[self._nid] = {"centroid": c, "missed": 0}
                 self._nid += 1
 
-        # prune dead tracks
+        # Prune dead tracks
         self._tracks = {
             k: v for k, v in self._tracks.items()
             if v["missed"] <= self.max_missed
         }
         return self._nid
+
+
+# ── Spike guard ───────────────────────────────────────────────────────────────
+
+class SpikeGuard:
+    """Reject frames with anomalously high detection counts.
+
+    Maintains a rolling window of per-frame detection counts and suppresses
+    frames where the count exceeds `multiplier × rolling_median`.
+    This prevents lighting flicker / belt reflection artifacts from creating
+    hundreds of phantom tracks (e.g. test_15_brown_200 frame 62: 189 detections).
+    """
+
+    def __init__(self, window: int = 60, multiplier: float = 3.0, min_threshold: int = 20):
+        self._window = deque(maxlen=window)
+        self._multiplier = multiplier
+        self._min_threshold = min_threshold  # don't suppress below this absolute count
+
+    def is_spike(self, count: int) -> bool:
+        """Return True if this frame's detection count looks anomalous."""
+        if len(self._window) < 10:
+            # Not enough history yet — only suppress extreme spikes
+            self._window.append(count)
+            return count > self._min_threshold * 3
+
+        median = float(np.median(self._window))
+        # Threshold: at least min_threshold, or multiplier × running median
+        threshold = max(self._min_threshold, median * self._multiplier)
+        self._window.append(count)
+        return count > threshold
+
+    def record(self, count: int):
+        """Record a (non-spike) frame's count for future reference."""
+        self._window.append(count)
 
 
 # ── Main processing function ──────────────────────────────────────────────────
@@ -185,16 +349,24 @@ def process_video(
     rice_mode: str = "auto",
     out_path: Optional[str] = None,
     verbose: bool = True,
+    max_dist: int = 45,
+    max_missed: Optional[int] = None,
+    edge_margin: int = 30,
+    spike_guard: bool = True,
 ) -> int:
     """
     Count rice grains in *video_path* and return the integer count.
 
     Parameters
     ----------
-    video_path : path to input video
-    rice_mode  : "white", "dark", "brown", or "auto"
-    out_path   : optional path to save an annotated output video
-    verbose    : print per-video stats
+    video_path  : path to input video
+    rice_mode   : "white", "dark", "brown", or "auto" (universal belt subtraction)
+    out_path    : optional path to save an annotated output video
+    verbose     : print per-video stats
+    max_dist    : max centroid distance for track matching (px)
+    max_missed  : frames before a track is pruned (default: auto from fps)
+    edge_margin : pixels to exclude at top/bottom frame edges
+    spike_guard : enable per-frame spike detection and suppression
     """
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -205,32 +377,49 @@ def process_video(
     W   = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     H   = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-    # auto-detect mode from the first readable frame
+    # In this updated implementation, "auto" uses the universal belt-background
+    # subtraction pipeline implemented in _make_mask().
     mode = rice_mode
-    if mode == "auto":
-        ok, f0 = cap.read()
-        if ok:
-            mode = _auto_mode(f0)
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 
-    # Keep dead tracks for ~0.33 s of real time; scale with fps so a 60 fps video
-    # doesn't reuse stale track IDs more aggressively than a 30 fps one.
-    max_missed = max(5, int(fps * 0.33))
-    tracker = UniqueGrainTracker(max_dist=70, max_missed=max_missed)
+    # Compute max_missed from FPS if not specified.
+    # At 60fps, grains are visible for 2-3 frames. Keep ghosts for ~3 frames max.
+    if max_missed is None:
+        max_missed = max(3, int(fps * 0.07))
+
+    tracker = UniqueGrainTracker(max_dist=max_dist, max_missed=max_missed)
+    guard   = SpikeGuard() if spike_guard else None
 
     writer = None
     if out_path:
         fourcc = cv2.VideoWriter_fourcc(*"mp4v")
         writer = cv2.VideoWriter(out_path, fourcc, fps, (W, H))
 
+    frame_idx = 0
+    spike_count = 0
+
     while True:
         ok, frame = cap.read()
         if not ok:
             break
 
-        contours, mask = detect_grains(frame, mode)
+        contours, mask = detect_grains(frame, mode, min_area=40)
         cens = centroids_of(contours)
-        cnt  = tracker.update(cens)
+
+        # Spike guard: skip frames with anomalous detection counts
+        if guard and guard.is_spike(len(cens)):
+            spike_count += 1
+            if writer:
+                # Still write frame but without updating tracker
+                vis = frame.copy()
+                cv2.putText(
+                    vis, f"Count: {tracker._nid}  [{mode}] SPIKE SKIPPED",
+                    (10, 42), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2,
+                )
+                writer.write(vis)
+            frame_idx += 1
+            continue
+
+        cnt = tracker.update(cens)
 
         if writer:
             vis = frame.copy()
@@ -246,12 +435,17 @@ def process_video(
             )
             writer.write(vis)
 
+        frame_idx += 1
+
     cap.release()
     if writer:
         writer.release()
 
     if verbose:
-        print(f"  mode={mode}  unique_grains={tracker._nid}")
+        extra = f"  spikes_skipped={spike_count}" if spike_count else ""
+        print(f"  mode={mode}  unique_grains={tracker._nid}  "
+              f"frames={frame_idx}  max_missed={max_missed}  "
+              f"max_dist={max_dist}{extra}")
     return tracker._nid
 
 
@@ -261,13 +455,29 @@ def _cli():
     ap = argparse.ArgumentParser(description="Count rice grains in a video.")
     ap.add_argument("video", help="Path to input video")
     ap.add_argument("--mode", default="auto",
-                    choices=["auto", "white", "dark", "brown"],
+                    choices=["auto", "mixed", "universal", "white", "dark", "brown"],
                     help="Rice colour profile (default: auto)")
     ap.add_argument("--out", default=None,
                     help="Save annotated output video to this path")
+    ap.add_argument("--max-dist", type=int, default=45,
+                    help="Max centroid distance for track matching (px)")
+    ap.add_argument("--max-missed", type=int, default=None,
+                    help="Frames before a track is pruned (default: auto)")
+    ap.add_argument("--edge-margin", type=int, default=30,
+                    help="Pixels to exclude at top/bottom frame edges")
+    ap.add_argument("--no-spike-guard", action="store_true",
+                    help="Disable per-frame spike detection")
     args = ap.parse_args()
 
-    count = process_video(args.video, rice_mode=args.mode, out_path=args.out)
+    count = process_video(
+        args.video,
+        rice_mode=args.mode,
+        out_path=args.out,
+        max_dist=args.max_dist,
+        max_missed=args.max_missed,
+        edge_margin=args.edge_margin,
+        spike_guard=not args.no_spike_guard,
+    )
     print(f"\nFinal count: {count}")
 
 
