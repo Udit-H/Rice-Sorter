@@ -30,8 +30,10 @@ Fixes vs naive approach:
     retrying on later frames if the grain was too close to the edge
   - Edge margin is soft: if a grain is never seen away from the edge,
     save it anyway after 5 frames so we don't lose it entirely
-  - MIN_AREA lowered to 50 px2 to catch small grains in these videos
+  - MIN_AREA=40 px2 (synced with count_grains_updated.py)
     (observed grain areas: 62-815 px2 at 1280x720)
+  - BORDER_MARGIN=2: contours touching the frame edge are rejected (belt artifacts)
+  - Aspect filter: tiny blobs (<150 px2) with aspect ratio >6 rejected (motion blur)
 """
 
 import cv2
@@ -73,14 +75,16 @@ TRAINING_VIDEOS = [
 TEST_VIDEO = CRG_DIR / "test_14_yellow_100.mp4"
 
 CROP_SIZE         = 224
-MIN_AREA          = 50       # px2 — observed grain areas start around 62 px2
+MIN_AREA          = 40       # px2 — synced with count_grains_updated.py
 SPLIT_AREA        = 2000     # px2 — above this = grain cluster, skip
-MAX_DIST          = 70       # px  — max centroid jump between frames
+MAX_DIST          = 45       # px  — max centroid jump between frames (synced)
 MAX_MISSED        = 20       # frames before a track is pruned
 EDGE_MARGIN_SOFT  = 8        # px  — preferred: save crop when grain is this far from edge
 EDGE_MARGIN_HARD  = 0        # px  — fallback after MAX_AGE_BEFORE_FORCED frames
 MAX_AGE_FORCED    = 5        # frames: if not saved yet by this age, save regardless of edge
 FG_RATIO_LIMIT    = 0.10     # skip frame if >10% of pixels are foreground (mask failure)
+BORDER_MARGIN     = 2        # px  — reject contours touching the frame edge (belt artifacts)
+ASPECT_SMALL_MAX  = 6.0      # reject high-aspect-ratio blobs smaller than 150 px2
 
 
 # ── Mask ──────────────────────────────────────────────────────────────────────
@@ -90,14 +94,15 @@ def make_mask(frame: np.ndarray):
     Isolate grain foreground from the blue conveyor belt.
     Returns (mask, fg_ratio) where fg_ratio is fraction of frame that is foreground.
     If fg_ratio > FG_RATIO_LIMIT the mask has failed (whole frame became foreground).
+    HSV ranges synced with count_grains_updated.py.
     """
     H, W = frame.shape[:2]
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    belt   = cv2.inRange(hsv, (90, 50,  40), (140, 255, 255))
-    shadow = cv2.inRange(hsv, (90, 40,  10), (140, 255,  80))
+    belt   = cv2.inRange(hsv, (85, 40,  30), (145, 255, 255))
+    shadow = cv2.inRange(hsv, (85, 30,   5), (145, 255,  80))
     bg     = cv2.bitwise_or(belt, shadow)
     fg     = cv2.bitwise_not(bg)
-    valid  = cv2.inRange(hsv, (0, 0, 15), (180, 255, 255))
+    valid  = cv2.inRange(hsv, (0, 0, 20), (180, 255, 255))
     m = cv2.bitwise_and(fg, valid)
     k3 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     k5 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
@@ -166,7 +171,20 @@ def extract_video(video_path: Path, output_dir: Path, label: str,
             continue
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        singles = [c for c in contours if MIN_AREA < cv2.contourArea(c) < SPLIT_AREA]
+        singles = []
+        for c in contours:
+            area = cv2.contourArea(c)
+            if not (MIN_AREA < area < SPLIT_AREA):
+                continue
+            bx, by, bw, bh = cv2.boundingRect(c)
+            if (bx <= BORDER_MARGIN or by <= BORDER_MARGIN or
+                    bx + bw >= W - BORDER_MARGIN or by + bh >= H - BORDER_MARGIN):
+                continue
+            if area < 150:
+                aspect = max(bw, bh) / (min(bw, bh) + 1e-5)
+                if aspect > ASPECT_SMALL_MAX:
+                    continue
+            singles.append(c)
         dets = [(centroid_of(c), c) for c in singles]
 
         # Greedy nearest-neighbour matching

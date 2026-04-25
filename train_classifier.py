@@ -291,14 +291,14 @@ print("\n" + "=" * 64)
 print("Test evaluation: test_14_yellow_100.mp4  (GT = 100 yellow grains)")
 print("=" * 64)
 
-# Inline mask + crop helpers (same logic as extract_dataset.py)
+# Inline mask + crop helpers (synced with count_grains_updated.py)
 def _test_make_mask(frame):
     hsv    = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    belt   = cv2.inRange(hsv, (90, 50,  40), (140, 255, 255))
-    shadow = cv2.inRange(hsv, (90, 40,  10), (140, 255,  80))
+    belt   = cv2.inRange(hsv, (85, 40,  30), (145, 255, 255))
+    shadow = cv2.inRange(hsv, (85, 30,   5), (145, 255,  80))
     bg     = cv2.bitwise_or(belt, shadow)
     fg     = cv2.bitwise_not(bg)
-    valid  = cv2.inRange(hsv, (0, 0, 15), (180, 255, 255))
+    valid  = cv2.inRange(hsv, (0, 0, 20), (180, 255, 255))
     m = cv2.bitwise_and(fg, valid)
     k3 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     k5 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
@@ -335,8 +335,14 @@ def extract_test_crops(video_path):
     tracks: dict = {}
     nid = 0
     crops = []
-    MAX_DIST, MAX_MISSED, MIN_AREA, SPLIT_AREA = 70, 20, 50, 2000
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    W_frame = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    H_frame = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    MIN_AREA, SPLIT_AREA = 40, 2000
+    MAX_DIST = 45
+    MAX_MISSED = max(3, int(fps * 0.07))
     MAX_AGE_FORCED, FG_LIMIT = 5, 0.10
+    BORDER_MARGIN = 2   # reject contours touching the frame edge
 
     while True:
         ok, frame = cap.read()
@@ -349,7 +355,22 @@ def extract_test_crops(video_path):
             continue
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        singles = [c for c in contours if MIN_AREA < cv2.contourArea(c) < SPLIT_AREA]
+        singles = []
+        for c in contours:
+            area = cv2.contourArea(c)
+            if not (MIN_AREA < area < SPLIT_AREA):
+                continue
+            x, y, w, h = cv2.boundingRect(c)
+            if (x <= BORDER_MARGIN or y <= BORDER_MARGIN or
+                    x + w >= W_frame - BORDER_MARGIN or
+                    y + h >= H_frame - BORDER_MARGIN):
+                continue
+            # reject high-aspect-ratio tiny blobs (motion-blur streaks)
+            if area < 150:
+                aspect = max(w, h) / (min(w, h) + 1e-5)
+                if aspect > 6.0:
+                    continue
+            singles.append(c)
         dets = [(_test_centroid(c), c) for c in singles]
 
         matched_t, matched_d = {}, set()
