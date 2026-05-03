@@ -18,3 +18,23 @@ videos/
 *.webp
 
 dbg_test_4_100.mp4.jpg
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+
+# Generated grain-crop datasets (rebuildable)
+extracted_grains/new_vids_*/
+extracted_grains/new_vids_v*/
+
+# Local experiments / outputs
+scratch/
+
+# Intermediate checkpoints (keep `models/rice_resnet18_new_vids_best.pth`)
+models/rice_resnet18_new_vids_e*.pth
